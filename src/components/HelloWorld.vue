@@ -1,95 +1,81 @@
-<script setup lang="ts">
-import { ref } from 'vue'
-import viteLogo from '../assets/vite.svg'
-import heroImg from '../assets/hero.png'
-import vueLogo from '../assets/vue.svg'
+<template>
+  <section class="empty-state">
+    <div class="empty-state__icon">{{ icon }}</div>
+    <div class="empty-state__content">
+      <h3>{{ title }}</h3>
+      <p>{{ description }}</p>
+    </div>
 
-const count = ref(0)
+    <el-button
+      v-if="actionText"
+      type="primary"
+      @click="emit('action')"
+    >
+      {{ actionText }}
+    </el-button>
+
+    <slot />
+  </section>
+</template>
+
+<script setup lang="ts">
+defineOptions({
+  name: 'HelloWorld',
+})
+
+withDefaults(defineProps<{
+  title?: string
+  description?: string
+  icon?: string
+  actionText?: string
+}>(), {
+  title: '暂无内容',
+  description: '当前模块还没有可展示的数据',
+  icon: '!',
+  actionText: '',
+})
+
+const emit = defineEmits<{
+  action: []
+}>()
 </script>
 
-<template>
-  <section id="center">
-    <div class="hero">
-      <img :src="heroImg" class="base" width="170" height="179" alt="" />
-      <img :src="vueLogo" class="framework" alt="Vue logo" />
-      <img :src="viteLogo" class="vite" alt="Vite logo" />
-    </div>
-    <div>
-      <h1>Get started</h1>
-      <p>Edit <code>src/App.vue</code> and save to test <code>HMR</code></p>
-    </div>
-    <button type="button" class="counter" @click="count++">
-      Count is {{ count }}
-    </button>
-  </section>
+<style scoped>
+.empty-state {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 32px;
+  text-align: center;
+  color: #606266;
+  background: #ffffff;
+  border: 1px dashed #dcdfe6;
+  border-radius: 6px;
+}
 
-  <div class="ticks"></div>
+.empty-state__icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #409eff;
+  background: #ecf5ff;
+  font-size: 24px;
+  font-weight: 700;
+}
 
-  <section id="next-steps">
-    <div id="docs">
-      <svg class="icon" role="presentation" aria-hidden="true">
-        <use href="/icons.svg#documentation-icon"></use>
-      </svg>
-      <h2>Documentation</h2>
-      <p>Your questions, answered</p>
-      <ul>
-        <li>
-          <a href="https://vite.dev/" target="_blank">
-            <img class="logo" :src="viteLogo" alt="" />
-            Explore Vite
-          </a>
-        </li>
-        <li>
-          <a href="https://vuejs.org/" target="_blank">
-            <img class="button-icon" :src="vueLogo" alt="" />
-            Learn more
-          </a>
-        </li>
-      </ul>
-    </div>
-    <div id="social">
-      <svg class="icon" role="presentation" aria-hidden="true">
-        <use href="/icons.svg#social-icon"></use>
-      </svg>
-      <h2>Connect with us</h2>
-      <p>Join the Vite community</p>
-      <ul>
-        <li>
-          <a href="https://github.com/vitejs/vite" target="_blank">
-            <svg class="button-icon" role="presentation" aria-hidden="true">
-              <use href="/icons.svg#github-icon"></use>
-            </svg>
-            GitHub
-          </a>
-        </li>
-        <li>
-          <a href="https://chat.vite.dev/" target="_blank">
-            <svg class="button-icon" role="presentation" aria-hidden="true">
-              <use href="/icons.svg#discord-icon"></use>
-            </svg>
-            Discord
-          </a>
-        </li>
-        <li>
-          <a href="https://x.com/vite_js" target="_blank">
-            <svg class="button-icon" role="presentation" aria-hidden="true">
-              <use href="/icons.svg#x-icon"></use>
-            </svg>
-            X.com
-          </a>
-        </li>
-        <li>
-          <a href="https://bsky.app/profile/vite.dev" target="_blank">
-            <svg class="button-icon" role="presentation" aria-hidden="true">
-              <use href="/icons.svg#bluesky-icon"></use>
-            </svg>
-            Bluesky
-          </a>
-        </li>
-      </ul>
-    </div>
-  </section>
+.empty-state__content h3 {
+  margin: 0 0 6px;
+  color: #303133;
+  font-size: 18px;
+}
 
-  <div class="ticks"></div>
-  <section id="spacer"></section>
-</template>
+.empty-state__content p {
+  margin: 0;
+  font-size: 14px;
+}
+</style>
