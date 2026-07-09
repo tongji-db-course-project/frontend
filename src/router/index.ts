@@ -17,7 +17,7 @@ const router = createRouter({
             {path:'system/menus',component:()=>import('../views/system/MenuListView.vue')},
 
             //商品管理
-            {path:'product',component:()=>import('../views/product/ProductView.vue')},
+            {path:'product',component:()=>import('../views/product/ProductListView.vue')},
             {path:'categories',component:()=>import('../views/product/CategoryListView.vue')},
             {path:'suppliers',component:()=>import('../views/supplier/SupplierListView.vue')},
             {path:'members',component:()=>import('../views/member/MemberListView.vue')},
@@ -46,7 +46,7 @@ const router = createRouter({
             {path:'statistics/sales',component:()=>import('../views/statistics/SalesStatisticsView.vue')},
             {path:'statistics/products',component:()=>import('../views/statistics/ProductRankView.vue')},
             {path:'statistics/profit',component:()=>import('../views/statistics/ProfitStatisticsView.vue')},
-            {path:'statistics/inventory',component:()=>import('../views/statistics/InventoryStatiticsView.vue')},
+            {path:'statistics/inventory',component:()=>import('../views/statistics/InventoryStatisticsView.vue')},
         ]}
     ]
 })
