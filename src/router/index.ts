@@ -7,15 +7,46 @@ const router = createRouter({
     history:createWebHistory(),
     routes:[
         {path:'/login', name:'login',component:LoginView},
-        {path:'/',component:MainLayout,children:[
-            {
-                path:'',
-                component:()=>import('../views/dashboard/DashboardView.vue')
-            },
-            {
-                path:'product',
-                component:()=>import('../views/product/ProductView.vue')
-            }
+        {path:'/',component:MainLayout,redirect:'/dashboard',children:[
+            //工作台
+            {path:'dashboard',component:()=>import('../views/dashboard/DashboardView.vue')},
+            
+            //系统管理
+            {path:'system/users',component:()=>import('../views/system/UserListView.vue')},
+            {path:'system/roles',component:()=>import('../views/system/RoleListView.vue')},
+            {path:'system/menus',component:()=>import('../views/system/MenuListView.vue')},
+
+            //商品管理
+            {path:'product',component:()=>import('../views/product/ProductView.vue')},
+            {path:'categories',component:()=>import('../views/product/CategoryListView.vue')},
+            {path:'suppliers',component:()=>import('../views/supplier/SupplierListView.vue')},
+            {path:'members',component:()=>import('../views/member/MemberListView.vue')},
+
+            //采购管理
+            {path:'purchases',component:()=>import('../views/purchase/PurchaseListView.vue')},
+            {path:'purchases/create',component:()=>import('../views/purchase/PurchaseFormView.vue')},
+            {path:'purchases/:id',component:()=>import('../views/purchase/PurchaseDetailView.vue')},
+
+            //销售管理
+            {path:'sales',component:()=>import('../views/sale/SaleListView.vue')},
+            {path:'sales/checkout',component:()=>import('../views/sale/CheckoutView.vue')},
+            {path:'sales/:id',component:()=>import('../views/sale/SaleDetailView.vue')},
+            
+            //退货管理
+            {path:'returns',component:()=>import('../views/return/ReturnListView.vue')},
+            {path:'returns/:id',component:()=>import('../views/return/ReturnDetailView.vue')},
+
+            //库存与其他
+            {path:'inventory',component:()=>import('../views/inventory/InventoryListView.vue')},
+            {path:'inventory/records',component:()=>import('../views/inventory/InventoryRecordView.vue')},
+            {path:'points/records',component:()=>import('../views/point/PointRecordView.vue')},
+            {path:'settlements',component:()=>import('../views/settlement/SettlementListView.vue')},
+
+            //统计分析
+            {path:'statistics/sales',component:()=>import('../views/statistics/SalesStatisticsView.vue')},
+            {path:'statistics/products',component:()=>import('../views/statistics/ProductRankView.vue')},
+            {path:'statistics/profit',component:()=>import('../views/statistics/ProfitStatisticsView.vue')},
+            {path:'statistics/inventory',component:()=>import('../views/statistics/InventoryStatiticsView.vue')},
         ]}
     ]
 })
