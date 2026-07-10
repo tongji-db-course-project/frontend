@@ -23,7 +23,9 @@
                 <!-- 情况二：有子菜单(如基础资料) -->
                 <el-sub-menu v-else :index="item.name">
                     <template #title>
-                        <span>{{ item.name }}</span>
+                        <div class="menu-title-container">
+                            <span>{{ item.name }}</span>
+                        </div>
                     </template>
                     <el-menu-item
                         v-for="sub in item.children"
@@ -127,22 +129,39 @@ const menuItems = [
 }
 
 :deep(.el-sub-menu__icon-arrow){
-    font-size:14px !important;
-    width:14px !important;
-    height:14px !important;
-    margin-top: -7px;
+    margin-top: -5px;  /* 微调垂直居中 */
+    right:20px;        /* 确保固定在右侧 */
+    position:absolute;
 }
 
 :deep(.el-menu-item),:deep(.el-sub-menu__title){
     display:flex !important;
-    align-items: flex !important;
+    align-items: center !important;
+    justify-content: space-between;
+    padding-right:20px !important;
+}
+
+:deep(.el-sub-menu__title){
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding-right: 20px !important;
+    width:100%;
+    box-sizing: border-box;
+}
+
+:deep(.el-sub-menu__title .el-sub-menu__icon-arrow){
+    position: relative;
+    margin: 0 !important;
+    margin-left: auto;
+    align-self: center;
 }
 
 :deep(.el-menu--inline .el-menu-item){
-    padding-left:50px !important;
-    font-size:13px;
-    height:35px !important;
-    line-height:35px !important;
+    padding-left:50px !important;  /* 控制左侧缩进，适当调小可减少空间浪费 */
+    font-size:13px;                /* 文字大小，调小可以节省垂直空间 */
+    height:25px !important;        /* 调小可以减小行高 */
+    line-height:25px !important;   /* 必须与height保持一致，保持垂直居中 */
 }
 
 :deep(.el-menu-item:hover),
@@ -154,25 +173,6 @@ const menuItems = [
 :deep(.el-menu-item.is-active){
     background-color:#1890ff !important;
     border-left:4px solid #fff;
-}
-
-.menu-list{
-    display:flex;
-    flex-direction:column;
-}
-
-.menu-item{
-    padding:15px 20px;
-    color:#bfcbd9;
-    text-decoration:none;  /*去掉下划线*/
-    background-color:#304156;
-    transition:0.3s;
-}
-
-
-.menu-item:hover{
-    background-color:#1890ff;
-    color:#fff;
 }
 
 </style>
