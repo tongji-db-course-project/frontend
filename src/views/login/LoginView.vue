@@ -1,135 +1,131 @@
-<!-- 1.<template>是“视图层”，负责页面的HTML结构-->
 <template>
-    <!-- class属性用于绑定CSS样式，控制布局 -->
-    <div class="login-page">
-        <!-- 登录页面的标题 -->
-        <h1 class="page-title">欢迎登录**业务系统</h1>
+  <div class="login-wrapper">
+    <el-card class="login-card">
+      <div class="title">
+        <el-icon :size="30" color="#409EFF"><Shop /></el-icon>
+        <h2>商品零售管理系统</h2>
+      </div>
 
-        <!-- 登录卡片 -->
-        <div class="login-card">
-            <h2>系统登录</h2>
+      <el-form :model="loginForm" size="large">
+        <el-form-item>
+          <el-input 
+            v-model="loginForm.username" 
+            placeholder="账号 " 
+            prefix-icon="User" 
+          />
+        </el-form-item>
+        
+        <el-form-item>
+          <el-input 
+            v-model="loginForm.password" 
+            type="password" 
+            placeholder="密码 " 
+            prefix-icon="Lock" 
+            show-password 
+            @keyup.enter="handleLogin"
+          />
+        </el-form-item>
 
-            <!-- v-model 是 Vue 最核心的语法之一：双向绑定 -->
-            <!-- 它让输入框的值 (input value) 和 script 中的变量 (loginForm.username) 永远保持同步 -->
-            <!-- 账号输入-->
-            <div class="form-group">
-                <label>账号</label>
-                <input 
-                    type="text"
-                    v-model="loginForm.username"
-                    placeholder="请输入用户名"
-                />
-            </div>
+        <el-button 
+          type="primary" 
+          :loading="loading" 
+          class="submit-btn" 
+          @click="handleLogin"
+        >
+          立即登录
+        </el-button>
+      </el-form>
 
-            <!-- 密码输入-->
-            <div class="form-group">
-                <label>密码</label>
-                <input 
-                    type="password"
-                    v-model="loginForm.password"
-                    placeholder="请输入密码"
-                />
-            </div>
-            <!-- @click 是事件绑定语法，用于监听鼠标点击事件，触发 handleLogin 函数 -->
-            <!-- 登录按钮 -->
-            <button class="login-btn" @click="handleLogin">登录</button>
-        </div>
-    </div>
+      
+    </el-card>
+  </div>
 </template>
 
-<!-- 2. <script setup> 是“逻辑层”，使用 Composition API 编写 JS 代码 -->
-<script setup>
-// 从 vue 库中导入 reactive 函数，它能把普通对象变成“响应式”数据
-// 所谓“响应式”，就是当数据改变时，页面会自动更新
-import {reactive} from 'vue'
+<script setup lang="ts">
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+// 导入Store
+import { useAuthStore } from '../../stores/auth'
+// 导入类型约束
+import type { LoginParams } from '../../types/auth'
 
-//定义表单数据对象
-const loginForm = reactive({
-    username: '',   // 初始为空字符串
-    password: ''
-});
+const router = useRouter()
+const authStore = useAuthStore()
+const loading = ref(false)
 
-//处理登录逻辑的函数
-const handleLogin= () =>{
-    // 这里可以访问到 loginForm 里的数据
-    console.log('准备提交的数据：',loginForm);
-//此处放置后面要接入的API请求逻辑
+const loginForm = reactive<LoginParams>({
+  username: '',
+  password: ''
+})
 
-    alert('登录按钮已点击！请在控制台查看数据。');
-};
+const handleLogin = async () => {
+  // 简单校验
+  if (!loginForm.username || !loginForm.password) {
+    return ElMessage.warning('请输入完整的账号和密码')
+  }
+
+  loading.value = true
+  try {
+    // 调用 Store 里的登录 Action
+    await authStore.login(loginForm)
+
+    // 登录成功跳转到首页 (Dashboard)
+    router.push('/dashboard')
+    
+    ElMessage.success('登录成功，正在跳转...')
+    
+    
+  } catch (err: any) {
+    if (!err?._handled) {
+      const msg = err?.message || err?.response?.data?.message || '登录失败'
+      ElMessage.error(msg)
+    }
+    console.error('登录失败详情:', err)
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
-<!-- 3. <style scoped> 是“样式层”，scoped 表示这些样式只对当前组件生效 -->
 <style scoped>
-/*页面容器：居中显示*/
-.login-page{
-    /* Flex 布局实现完美的水平垂直居中 */
-    display:flex;
-    flex-direction:column;      /*垂直排列*/
-    justify-content:center;    /*水平居中*/
-    align-items:center;         /*垂直居中*/
-    height:100vh;               /*占满整个视口高度*/
-    background-color:#f5f7fa; /*淡灰色背景*/
+.login-wrapper {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* 深蓝渐变色 */
+  background: linear-gradient(135deg, #2d3a4b 0%, #1c242f 100%);
 }
 
-.page-title{
-    font-size:32px;
-    margin-bottom:40px;
-    color:#333;
+.login-card {
+  width: 400px;
+  border-radius: 8px;
+  padding: 20px;
 }
 
-/*登录卡片*/
-.login-card{
-    width:350px;                 /*固定宽度*/
-    padding:30px;                /*内边距*/
-    background:white;
-    border-radius:8px;           /*圆角*/
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);   /* 阴影 */
+.title {
+  text-align: center;
+  margin-bottom: 40px;
 }
 
-/*标题样式*/
-.login-card h2{
-    text-align:center;
-    margin-bottom:25px;
-    color:#333;
+.title h2 {
+  margin-top: 10px;
+  color: #333;
+  font-size: 24px;
 }
 
-/*输入框组合 */
-.form-group{
-    margin-bottom:15px;
+.submit-btn {
+  width: 100%;
+  margin-top: 10px;
+  height: 48px;
 }
 
-.form-group label{
-    display:block;
-    margin-bottom:5px;
-    font-size:14px;
-    color:#666;
-}
-
-input{
-    width:100%;
-    padding:10px;
-    border:1px solid #dcdfe6;
-    border-radius:4px;
-    box-sizing:border-box;    /*防止padding撑大盒子*/
-    display:inline-block;
-}
-
-/*按钮样式*/
-.login-btn{
-    width:100%;
-    padding:10px;
-    margin-top:10px;
-    background-color:#409eff;
-    color:white;
-    border:none;
-    border-radius:4px;
-    cursor:pointer;
-    font-size:16px;
-    display:block;
-}
-
-.login-btn:hover{
-    background-color:#66b1ff;
+.tips {
+  text-align: center;
+  margin-top: 20px;
+  color: #999;
+  font-size: 13px;
 }
 </style>
