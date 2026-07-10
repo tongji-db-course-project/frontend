@@ -11,9 +11,13 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
+const router=useRouter()
+const authStore=useAuthStore()
 const handleLogout=()=>{
-    alert('退出登录');
-    //后续这里会跳转到/login页面
+    authStore.logout()
+    router.push('/login')
 };
 </script>
 

@@ -49,7 +49,7 @@ const menuItems = [
     {
         name:'基础资料',
         children:[
-            {name:'商品管理',path:'/products'},
+            {name:'商品管理',path:'/product'},
             {name:'商品分类',path:'/categories'},
             {name:'供应商管理',path:'/suppliers'},
             {name:'会员管理',path:'/members'}
@@ -75,8 +75,6 @@ const menuItems = [
         children:[
             {name:'当前库存',path:'/inventory'},
             {name:'库存流水',path:'/inventory/records'},
-            //假设库存预警路径
-            {name:'库存预警',path:'/inventory/warning'}
         ]
     },
     {
