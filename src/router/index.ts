@@ -51,4 +51,23 @@ const router = createRouter({
     ]
 })
 
+router.beforeEach((to,_from,next)=>{
+    const token=localStorage.getItem('token')
+
+    //没登录，并且访问的不是登录页
+    if(!token&&to.path!=='/login'){
+        next('/login')
+        return
+    }
+
+    //已登录，却又访问登录页
+    if(token&&to.path==='/login'){
+        next('/dashboard')
+        return
+    }
+
+    //其他情况正常放行
+    next()
+})
+
 export default router
