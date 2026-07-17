@@ -31,7 +31,7 @@
               clearable
             >
               <template #prefix>
-                <el-icon ><User /></el-icon>
+                <el-icon><User /></el-icon>
               </template>
             </el-input>
           </el-form-item>
@@ -45,7 +45,7 @@
               @keyup.enter="handleLogin"
             >
               <template #prefix>
-                <el-icon ><Lock /></el-icon>
+                <el-icon><Lock /></el-icon>
               </template>
             </el-input>
           </el-form-item>
@@ -136,9 +136,19 @@ const handleLogin = async () => {
   justify-content: center;
   padding: 32px;
   background: 
-    radial-gradient(circle at top left,rgba(64,158,255,0.28),transparent 30%),
-    radial-gradient(circle at bottom right,rgba(32,201,151,0.18),transparent 30%),
+    radial-gradient(circle at top left,rgba(64,158,255,0.28),transparent 50%),
+    radial-gradient(circle at bottom right,rgba(32,201,151,0.18),transparent 50%),
     linear-gradient(135deg,#0f172a 0%,#1e293b);
+
+  background-size: 200% 200%;
+  animation: gradientMove 10s ease infinite;
+}
+
+/* 定义动画关键帧 */
+@keyframes gradientMove{
+  0%{background-position: 0% 50%;}
+  50%{background-position: 100% 50%;}
+  100%{background-position: 0% 50%;}
 }
 
 .login-panel{
@@ -247,7 +257,13 @@ const handleLogin = async () => {
 :deep(.el-input__prefix){
   display: flex ;
   align-items: center ;
+  justify-content: center;
+  width: 24px;    /* 显示设置宽度 */
   margin-right: 8px ;
+}
+
+:deep(.el-input__prefix .el-icon){
+  font-size:16px;    /* 强制指定图标大小 */
 }
 
 @media(max-width:900px){

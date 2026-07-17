@@ -691,3 +691,22 @@ td {
     grid-template-columns: 1fr;
   }
 }
+
+.el-icon {
+  font-family: "element-icons" !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  vertical-align: middle;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 如果使用的是 svg 图标，确保其尺寸不受字体继承影响 */
+.el-icon svg {
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+}
