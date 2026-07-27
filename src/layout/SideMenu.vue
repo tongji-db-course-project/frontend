@@ -1,176 +1,254 @@
 <template>
-    <div class="side-menu">
-        <div class="logo">管理系统</div>
-
-        <!-- 
-        :default-active="route.path" -> 自动高亮当前所在的路由
-        router -> 开启路由模式，点击 item 直接跳转到 index 指定的 path
-        unique-opened -> （可选）只保持一个子菜单展开 
-         -->
-        <el-menu
-            :default-active="route.path"
-            class="el-menu-vertical"
-            background-color="#304156"
-            text-color="#1890ff"
-            active-text-color="#1890ff"
-            router
-            >
-            <template v-for="item in menuItems" :key="item.path || item.name">
-                <!-- 情况1：没有子菜单 -->
-                <el-menu-item v-if="!item.children" :index="item.path">
-                   <span>{{ item.name }}</span>
-                </el-menu-item>
-                <!-- 情况二：有子菜单(如基础资料) -->
-                <el-sub-menu v-else :index="item.name">
-                    <template #title>
-                        <div class="menu-title-container">
-                            <span>{{ item.name }}</span>
-                        </div>
-                    </template>
-                    <el-menu-item
-                        v-for="sub in item.children"
-                        :key="sub.path"
-                        :index="sub.path"
-                    >
-                      {{ sub.name }}
-                    </el-menu-item>
-                </el-sub-menu>
-            </template>
-        </el-menu>
+  <div class="side-menu">
+    <div class="brand">
+      <span class="brand-mark">S</span>
+      <div>
+        <strong>商舟零售</strong>
+        <small>RETAIL ADMIN</small>
+      </div>
     </div>
+
+    <div class="menu-search">
+      <Search />
+      <span>搜索功能</span>
+      <kbd>/</kbd>
+    </div>
+
+    <el-menu
+      :default-active="route.path"
+      :default-openeds="openedMenus"
+      class="menu"
+      background-color="transparent"
+      text-color="#9fc5fa"
+      active-text-color="#ffffff"
+      router
+      unique-opened
+      @select="$emit('navigate')"
+    >
+      <template v-for="item in menuItems" :key="item.path || item.name">
+        <el-menu-item v-if="!item.children" :index="item.path">
+          <el-icon><component :is="item.icon" /></el-icon>
+          <span>{{ item.name }}</span>
+        </el-menu-item>
+        <el-sub-menu v-else :index="item.name">
+          <template #title>
+            <el-icon><component :is="item.icon" /></el-icon>
+            <span>{{ item.name }}</span>
+          </template>
+          <el-menu-item v-for="sub in item.children" :key="sub.path" :index="sub.path">
+            <span class="sub-dot" />
+            {{ sub.name }}
+          </el-menu-item>
+        </el-sub-menu>
+      </template>
+    </el-menu>
+
+    <div class="sidebar-footer">
+      <span class="status-dot" />
+      <div>
+        <strong>服务运行正常</strong>
+        <small>最后更新 刚刚</small>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import{useRoute}from 'vue-router'
-//获取当前路由对象，用于自动高亮当前菜单项
-const route=useRoute();
+import { useRoute } from 'vue-router'
+import {
+  Box, DataAnalysis, Goods, HomeFilled, List, Setting,
+  ShoppingCart, Search, User,
+} from '@element-plus/icons-vue'
+
+defineEmits(['navigate'])
+const route = useRoute()
+const openedMenus = ['数据中心']
+
 const menuItems = [
-    {name:'首页',path:'/dashboard'},
-    {
-        name:'基础资料',
-        children:[
-            {name:'商品管理',path:'/product'},
-            {name:'商品分类',path:'/categories'},
-            {name:'供应商管理',path:'/suppliers'},
-            {name:'会员管理',path:'/members'}
-        ]
-    },
-    {
-        name:'采购管理',
-        children:[
-            {name:'采购单列表',path:'/purchases'},
-            {name:'新建采购单',path:'/purchases/create'}
-        ]
-    },
-    {
-        name:'销售管理',
-        children:[
-            {name:'POS机收银',path:'/sales/checkout'},
-            {name:'销售单列表',path:'/sales'},
-            {name:'退货管理',path:'/returns'}
-        ]
-    },
-    {
-        name:'库存管理', 
-        children:[
-            {name:'当前库存',path:'/inventory'},
-            {name:'库存流水',path:'/inventory/records'},
-        ]
-    },
-    {
-        name:'财务与统计',
-        children:[
-            {name:'供应商结算',path:'/settlements'},
-            {name:'销售统计',path:'/statistics/sales'},
-            {name:'商品排行',path:'/statistics/products'},
-            {name:'毛利分析',path:'/statistics/profit'},
-        ]
-    },
-    {
-        name:'系统管理',
-        children:[
-            {name:'用户管理',path:'/system/users'},
-            {name:'角色管理',path:'/system/roles'},
-            {name:'菜单管理',path:'/system/menus'}
-        ]
-    },
-];
+  { name: '经营概览', path: '/dashboard', icon: HomeFilled },
+  {
+    name: '基础资料', icon: Goods,
+    children: [
+      { name: '商品管理', path: '/product' },
+      { name: '商品分类', path: '/categories' },
+      { name: '供应商管理', path: '/suppliers' },
+    ],
+  },
+  { name: '会员管理', path: '/members', icon: User },
+  {
+    name: '采购管理', icon: Box,
+    children: [
+      { name: '采购单列表', path: '/purchases' },
+      { name: '新建采购单', path: '/purchases/create' },
+    ],
+  },
+  {
+    name: '销售管理', icon: ShoppingCart,
+    children: [
+      { name: 'POS 收银', path: '/sales/checkout' },
+      { name: '销售单列表', path: '/sales' },
+      { name: '退货管理', path: '/returns' },
+    ],
+  },
+  {
+    name: '库存管理', icon: List,
+    children: [
+      { name: '当前库存', path: '/inventory' },
+      { name: '库存流水', path: '/inventory/records' },
+    ],
+  },
+  {
+    name: '数据中心', icon: DataAnalysis,
+    children: [
+      { name: '销售统计', path: '/statistics/sales' },
+      { name: '商品排行', path: '/statistics/products' },
+      { name: '毛利分析', path: '/statistics/profit' },
+      { name: '供应商结算', path: '/settlements' },
+    ],
+  },
+  {
+    name: '系统管理', icon: Setting,
+    children: [
+      { name: '角色管理', path: '/system/roles' },
+      { name: '菜单管理', path: '/system/menus' },
+    ],
+  },
+]
 </script>
 
 <style scoped>
-.side-menu{
-    height:100%;
-    display:flex;
-    flex-direction:column;
+.side-menu {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  background: linear-gradient(180deg, #087cf4 0%, #076fe2 46%, #075fc5 100%);
+  box-shadow: 4px 0 18px rgba(26, 85, 160, .15);
 }
 
-.logo{
-    height:60px;
-    line-height:60px;
-    text-align:center;
-    font-weight:bold;
-    color:#fff;
-    background:#2b3644;
+.brand {
+  height: 68px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border-bottom: 1px solid rgba(255, 255, 255, .12);
 }
 
-.el-menu-vertical{
-    border-right:none;
-    flex:1;   /*让菜单区占满剩余空间*/
-    overflow-y:auto;  /* 允许滚动 */
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: #0d75e5;
+  font-size: 21px;
+  font-style: italic;
+  font-weight: 900;
+  border-radius: 10px 5px 10px 5px;
+  background: #fff;
 }
 
-.el-menu-vertical::-webkit-scrollbar{
-    width:6px;
-}
-.el-menu-vertical::-webkit-scrollbar-thumb{
-    background-color: #5a6e85;
+.brand > div {
+  display: grid;
 }
 
-:deep(.el-sub-menu__icon-arrow){
-    margin-top: -5px;  /* 微调垂直居中 */
-    right:20px;        /* 确保固定在右侧 */
-    position:absolute;
+.brand strong {
+  font-size: 17px;
+  letter-spacing: .05em;
 }
 
-:deep(.el-menu-item),:deep(.el-sub-menu__title){
-    display:flex !important;
-    align-items: center !important;
-    justify-content: space-between;
-    padding-right:20px !important;
+.brand small {
+  color: rgba(255,255,255,.62);
+  font-size: 9px;
+  letter-spacing: .16em;
 }
 
-:deep(.el-sub-menu__title){
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding-right: 20px !important;
-    width:100%;
-    box-sizing: border-box;
+.menu-search {
+  height: 34px;
+  margin: 14px 14px 6px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255,255,255,.62);
+  font-size: 12px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 7px;
+  background: rgba(0, 44, 110, .12);
 }
 
-:deep(.el-sub-menu__title .el-sub-menu__icon-arrow){
-    position: relative;
-    margin: 0 !important;
-    margin-left: auto;
-    align-self: center;
+.menu-search svg {
+  width: 14px;
 }
 
-:deep(.el-menu--inline .el-menu-item){
-    padding-left:50px !important;  /* 控制左侧缩进，适当调小可减少空间浪费 */
-    font-size:13px;                /* 文字大小，调小可以节省垂直空间 */
-    height:25px !important;        /* 调小可以减小行高 */
-    line-height:25px !important;   /* 必须与height保持一致，保持垂直居中 */
+.menu-search kbd {
+  margin-left: auto;
+  padding: 1px 5px;
+  color: rgba(255,255,255,.55);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 4px;
+  background: transparent;
+}
+
+.menu {
+  flex: 1;
+  overflow-y: auto;
+  border-right: 0;
+}
+
+:deep(.el-menu-item),
+:deep(.el-sub-menu__title) {
+  height: 44px;
+  margin: 2px 9px;
+  padding: 0 13px !important;
+  border-radius: 7px;
+  font-size: 13px;
 }
 
 :deep(.el-menu-item:hover),
-:deep(.el-sub-menu__title:hover){
-    background-color: #1890ff !important;
-    color:#fff !important;
+:deep(.el-sub-menu__title:hover) {
+  color: #fff !important;
+  background: rgba(255,255,255,.11) !important;
 }
 
-:deep(.el-menu-item.is-active){
-    background-color:#1890ff !important;
-    border-left:4px solid #fff;
+:deep(.el-menu-item.is-active) {
+  color: #fff !important;
+  font-weight: 600;
+  background: rgba(255,255,255,.18) !important;
+  box-shadow: inset 3px 0 0 #fff;
 }
 
+:deep(.el-sub-menu .el-menu-item) {
+  min-width: auto;
+  height: 35px;
+  padding-left: 46px !important;
+  color: rgba(255,255,255,.68);
+  font-size: 12px;
+}
+
+.sub-dot {
+  width: 4px;
+  height: 4px;
+  margin-right: 10px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.sidebar-footer {
+  margin: 10px 14px 14px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border-radius: 8px;
+  background: rgba(0, 39, 94, .18);
+}
+
+.sidebar-footer > div {
+  display: grid;
+}
+
+.sidebar-footer strong { font-size: 11px; }
+.sidebar-footer small { color: rgba(255,255,255,.58); font-size: 10px; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #58e6a9; box-shadow: 0 0 0 4px rgba(88,230,169,.13); }
 </style>
