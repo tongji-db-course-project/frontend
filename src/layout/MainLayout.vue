@@ -1,56 +1,82 @@
 <template>
-    <div class="main-layout">
-        <!-- 左侧菜单 -->
-        <aside class="sidebar">
-            <SideMenu />
-        </aside>
+  <div class="app-shell">
+    <aside class="app-sidebar" :class="{ 'is-open': mobileMenuOpen }">
+      <SideMenu @navigate="mobileMenuOpen = false" />
+    </aside>
+    <div v-if="mobileMenuOpen" class="menu-mask" @click="mobileMenuOpen = false" />
 
-        <div class="content-wrapper">
-            <!-- 顶部导航栏-->
-            <header class="header">
-                <HeaderBar />
-            </header>
-
-            <!-- 核心内容区，所有业务页面都将渲染在这里 -->
-            <main class="main-body">
-                <router-view />
-            </main>
-        </div>
-    </div>
+    <section class="app-workspace">
+      <HeaderBar @toggle-menu="mobileMenuOpen = !mobileMenuOpen" />
+      <main class="app-main">
+        <router-view />
+      </main>
+    </section>
+  </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import SideMenu from './SideMenu.vue'
 import HeaderBar from './HeaderBar.vue'
+
+const mobileMenuOpen = ref(false)
 </script>
 
 <style scoped>
-.main-layout{
-    display:flex;
-    height:100vh;  /* 占满整个视口高度 */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  background: #f3f6fb;
 }
 
-.sidebar{
-    width:240px;
-    background-color:#304156;
-    color:white;
+.app-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 30;
+  width: 232px;
 }
 
-.content-wrapper{
-    flex:1;
-    display:flex;
-    flex-direction:column;
-}
-.header{
-    height:60px;
-    background-color:#fff;
-    border-bottom:1px solid #e6e6e6;
-}
-.main-body{
-    flex:1;
-    padding:20px;
-    background-color:#f0f2f5;
-    overflow:auto;   /* 让内容区可以滚动 */
+.app-workspace {
+  min-width: 0;
+  width: calc(100% - 232px);
+  margin-left: 232px;
 }
 
+.app-main {
+  min-height: calc(100vh - 64px);
+  padding: 16px;
+  overflow: hidden;
+}
+
+.menu-mask {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .app-sidebar {
+    transform: translateX(-100%);
+    transition: transform .24s ease;
+  }
+
+  .app-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .app-workspace {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .app-main {
+    padding: 12px;
+  }
+
+  .menu-mask {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: rgba(13, 31, 58, .45);
+  }
+}
 </style>

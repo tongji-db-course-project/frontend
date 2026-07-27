@@ -1,37 +1,210 @@
 <template>
-    <div class="header-bar">
-        <div class="left">
-            <span>数据库课程设计-业务系统</span>
-        </div>
-        <div class="right">
-            <span class="user-info">管理员</span>
-            <button @click="handleLogout" class="logout-btn">退出</button>
-        </div>
+  <header class="header-bar">
+    <div class="header-left">
+      <button class="menu-trigger" aria-label="打开导航菜单" @click="$emit('toggle-menu')">
+        <Menu />
+      </button>
+      <div class="breadcrumb">
+        <span>零售管理中心</span>
+        <i>/</i>
+        <strong>{{ currentTitle }}</strong>
+      </div>
     </div>
+
+    <div class="header-actions">
+      <button class="icon-button" aria-label="搜索"><Search /></button>
+      <button class="icon-button notification" aria-label="通知">
+        <Bell />
+        <span />
+      </button>
+      <div class="divider" />
+      <div class="profile">
+        <span class="avatar">管</span>
+        <div>
+          <strong>管理员</strong>
+          <small>系统管理员</small>
+        </div>
+      </div>
+      <button class="logout-button" @click="handleLogout">退出</button>
+    </div>
+  </header>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
-const router=useRouter()
-const authStore=useAuthStore()
-const handleLogout=()=>{
-    authStore.logout()
-    router.push('/login')
-};
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { Bell, Menu, Search } from '@element-plus/icons-vue'
+import { useAuthStore } from '../stores/auth'
+
+defineEmits(['toggle-menu'])
+
+const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+
+const titles = {
+  '/dashboard': '经营概览',
+  '/product': '商品管理',
+  '/categories': '商品分类',
+  '/suppliers': '供应商管理',
+  '/members': '会员管理',
+  '/purchases': '采购管理',
+  '/sales': '销售管理',
+  '/sales/checkout': 'POS 收银',
+  '/returns': '退货管理',
+  '/inventory': '当前库存',
+  '/inventory/records': '库存流水',
+  '/settlements': '供应商结算',
+  '/statistics/sales': '销售统计',
+  '/statistics/products': '商品排行',
+  '/statistics/profit': '毛利分析',
+  '/system/users': '会员管理',
+  '/system/roles': '角色管理',
+  '/system/menus': '菜单管理',
+}
+
+const currentTitle = computed(() => titles[route.path] || '业务工作台')
+
+const handleLogout = () => {
+  authStore.logout()
+  router.push('/login')
+}
 </script>
 
 <style scoped>
-.header-bar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:0 20px;
-    height:100%;
+.header-bar {
+  height: 64px;
+  padding: 0 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #fff;
+  border-bottom: 1px solid #e8edf5;
 }
 
-.logout-btn{
-    margin-left:15px;
-    cursor:pointer;
+.header-left,
+.header-actions,
+.profile {
+  display: flex;
+  align-items: center;
+}
+
+.header-left,
+.header-actions {
+  gap: 14px;
+}
+
+.breadcrumb {
+  color: #8793a7;
+  font-size: 14px;
+}
+
+.breadcrumb i {
+  margin: 0 9px;
+  color: #ccd3de;
+  font-style: normal;
+}
+
+.breadcrumb strong {
+  color: #26364d;
+  font-weight: 600;
+}
+
+.menu-trigger,
+.icon-button,
+.logout-button {
+  border: 0;
+  background: transparent;
+}
+
+.menu-trigger {
+  display: none;
+  width: 36px;
+  color: #45566f;
+}
+
+.menu-trigger svg,
+.icon-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.icon-button {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: #6f7d92;
+  border-radius: 8px;
+}
+
+.icon-button:hover {
+  color: #1677ff;
+  background: #f1f6ff;
+}
+
+.notification span {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 6px;
+  height: 6px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ff5f57;
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  background: #e8edf5;
+}
+
+.profile {
+  gap: 9px;
+}
+
+.profile > div {
+  display: grid;
+}
+
+.profile strong {
+  color: #27364c;
+  font-size: 13px;
+}
+
+.profile small {
+  color: #9aa5b5;
+  font-size: 11px;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #1677ff, #55a3ff);
+}
+
+.logout-button {
+  padding: 7px 10px;
+  color: #768398;
+  border-radius: 7px;
+}
+
+.logout-button:hover {
+  color: #e5484d;
+  background: #fff2f2;
+}
+
+@media (max-width: 900px) {
+  .menu-trigger { display: grid; place-items: center; }
+  .breadcrumb span, .breadcrumb i, .profile > div, .divider, .icon-button:first-of-type { display: none; }
 }
 </style>

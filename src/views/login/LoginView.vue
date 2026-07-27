@@ -135,13 +135,42 @@ const handleLogin = async () => {
   align-items:center;
   justify-content: center;
   padding: 32px;
-  background: 
-    radial-gradient(circle at top left,rgba(64,158,255,0.28),transparent 50%),
-    radial-gradient(circle at bottom right,rgba(32,201,151,0.18),transparent 50%),
-    linear-gradient(135deg,#0f172a 0%,#1e293b);
+  background:
+    radial-gradient(circle at 12% 12%, rgba(22,119,255,0.18), transparent 34%),
+    radial-gradient(circle at 88% 84%, rgba(51,195,217,0.14), transparent 30%),
+    linear-gradient(135deg,#edf5ff 0%,#f8fbff 52%,#eef7fc 100%);
 
   background-size: 200% 200%;
   animation: gradientMove 10s ease infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-wrapper::before,
+.login-wrapper::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(22,119,255,0.1);
+  pointer-events: none;
+}
+
+.login-wrapper::before {
+  width: 420px;
+  height: 420px;
+  left: -150px;
+  top: -160px;
+  box-shadow:
+    0 0 0 55px rgba(22,119,255,0.025),
+    0 0 0 110px rgba(22,119,255,0.018);
+}
+
+.login-wrapper::after {
+  width: 300px;
+  height: 300px;
+  right: -110px;
+  bottom: -120px;
+  box-shadow: 0 0 0 65px rgba(51,195,217,0.025);
 }
 
 /* 定义动画关键帧 */
@@ -158,10 +187,12 @@ const handleLogin = async () => {
   grid-template-columns: 1.1fr 0.9fr;
   gap:32px;
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
 
 .login-banner{
-  color:#fff;
+  color:#173b73;
   padding: 24px;
 }
 
@@ -172,8 +203,8 @@ const handleLogin = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background:linear-gradient(135deg,#409eff 0%,#36cfc9 100%);
-  box-shadow: 0 12px 30px rgba(64,158,255,0.28);
+  background:linear-gradient(135deg,#1677ff 0%,#55a3ff 100%);
+  box-shadow: 0 12px 30px rgba(22,119,255,0.22);
   margin-bottom:20px;
 }
 
@@ -187,16 +218,17 @@ const handleLogin = async () => {
 .login-banner p{
   font-size: 16px;
   line-height: 1.8;
-  color:rgba(255,255,255,0.78);
+  color:#647895;
   max-width: 420px;
 }
 
 .login-card {
   border-radius: 24px;
   padding:18px;
-  border:none;
-  background:rgba(255,255,255,0.96);
-  box-shadow: 0 24px 60px rgba(15,23,42,0.22);
+  border:1px solid rgba(209,222,239,0.9);
+  background:rgba(255,255,255,0.94);
+  box-shadow: 0 24px 60px rgba(39,91,160,0.14);
+  backdrop-filter: blur(16px);
 }
 
 .title {
@@ -239,15 +271,27 @@ const handleLogin = async () => {
   border-radius: 12px;
   font-size: 16px;
   font-weight: 600;
+  border-color: #1677ff;
+  background: linear-gradient(135deg,#1677ff,#438ff2);
+  box-shadow: 0 10px 22px rgba(22,119,255,0.2);
 }
 
 :deep(.el-input__wrapper){
   min-height:46px;
   border-radius: 12px;
-  box-shadow:0 0 0 1px #dcdfe6 inset !important;
-  padding: 0 15px; 
+  box-shadow:0 0 0 1px #dce5f0 inset !important;
+  padding: 0 15px;
   display:flex ;
   align-items:center;
+  background:#fbfdff;
+}
+
+:deep(.el-input__wrapper:hover){
+  box-shadow:0 0 0 1px #aacbf4 inset !important;
+}
+
+:deep(.el-input__wrapper.is-focus){
+  box-shadow:0 0 0 1px #1677ff inset, 0 0 0 3px rgba(22,119,255,0.08) !important;
 }
 
 :deep(.el-form-item){
