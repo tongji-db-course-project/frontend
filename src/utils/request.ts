@@ -23,8 +23,8 @@ request.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
-const getErrorMessage = (statusCode: number | undefined, businessCode: number | undefined) => {
-  if (businessCode === 400) return '用户名或密码错误'
+const getErrorMessage = (statusCode: number | undefined, businessCode: number | undefined, serverMessage?: string) => {
+  if (businessCode === 400) return serverMessage || '请求参数错误'
   if (businessCode === 401) return '未登录或登录状态失效'
   if (businessCode === 403) return '无权限访问该资源'
   if (businessCode === 500) return '服务器内部错误'
@@ -47,14 +47,14 @@ request.interceptors.response.use(
       }
 
       //业务错误
-      const message = getErrorMessage(response.status, res?.code)
+      const message = getErrorMessage(response.status, res?.code, res?.message)
       ElMessage.error(message)
       const err = { code: res?.code, message, data: res?.data ?? null, _handled: true }
       return Promise.reject(err)
     }
 
     //HTTP失败
-    const message = getErrorMessage(response.status, response.data?.code)
+    const message = getErrorMessage(response.status, response.data?.code, response.data?.message)
     ElMessage.error(message)
     const err = Object.assign(new Error(message), { _handled: true })
     return Promise.reject(err)
@@ -62,7 +62,7 @@ request.interceptors.response.use(
   //网络错误
   (error) => {
     const status = error.response?.status
-    const message = getErrorMessage(status, error.response?.data?.code)
+    const message = getErrorMessage(status, error.response?.data?.code, error.response?.data?.message)
     ElMessage.error(message)
     const err = Object.assign(error, { _handled: true, message })
     return Promise.reject(err)

@@ -25,7 +25,8 @@ const router = createRouter({
 
             //采购管理
             {path:'purchases',component:()=>import('../views/purchase/PurchaseListView.vue')},
-            {path:'purchases/create',component:()=>import('../views/purchase/PurchaseFormView.vue')},
+            // 新建操作已合并到采购单列表页，保留旧地址兼容历史链接
+            {path:'purchases/create',redirect:'/purchases'},
             {path:'purchases/:id',component:()=>import('../views/purchase/PurchaseDetailView.vue')},
 
             //销售管理
