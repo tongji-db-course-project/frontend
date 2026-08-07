@@ -102,6 +102,7 @@ const menuItems = [
       { name: '销售统计', path: '/statistics/sales' },
       { name: '商品排行', path: '/statistics/products' },
       { name: '毛利分析', path: '/statistics/profit' },
+      { name: '库存分析', path: '/statistics/inventory' },
       { name: '供应商结算', path: '/settlements' },
     ],
   },
