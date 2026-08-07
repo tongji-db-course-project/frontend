@@ -1,10 +1,10 @@
 import request from '../utils/request'
 import type { PageResult } from '../types/common'
-import type { Product, ProductPayload, ProductQuery } from '../types/product'
+import type { Product, ProductListItem, ProductPayload, ProductQuery } from '../types/product'
 
 export const productApi = {
   getList(params: ProductQuery) {
-    return request.get<unknown, PageResult<Product>>('/products', { params })
+    return request.get<unknown, PageResult<ProductListItem>>('/products', { params })
   },
 
   create(data: ProductPayload) {
