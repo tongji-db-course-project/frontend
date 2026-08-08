@@ -1,0 +1,1 @@
+<template><div class="reserved"><h1>采购单编辑</h1><p>采购单新增与编辑已整合至采购单列表页面，此视图保留用于后续独立路由扩展。</p><RouterLink to="/purchases">返回采购管理</RouterLink></div></template><style scoped>.reserved{padding:48px;text-align:center;border:1px solid #e6ebf2;border-radius:8px;background:#fff}.reserved p{color:#8b97a8}.reserved a{color:#1677ff}</style>

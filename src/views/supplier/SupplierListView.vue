@@ -1,0 +1,5 @@
+<template><OperationsListPage title="供应商管理" eyebrow="基础资料 · 合作伙伴" primary-label="新增供应商" :metrics="metrics" :columns="columns" :rows="rows" :statuses="['正常','停用']" :form-fields="['供应商名称','联系人','联系电话','结算周期']" search-placeholder="搜索供应商名称、联系人" /></template>
+<script setup lang="ts">import OperationsListPage from '../../components/OperationsListPage.vue'
+const metrics=[{label:'供应商总数',value:'48',note:'本月新增 3 家'},{label:'正常合作',value:'42',note:'合作率 87.5%'},{label:'待结算金额',value:'¥ 86,420',note:'涉及 12 家供应商'},{label:'本月采购额',value:'¥ 326,800',note:'较上月增长 9.2%'}]
+const columns=[{key:'supplierNo',label:'供应商编号'},{key:'name',label:'供应商名称',emphasis:true},{key:'contact',label:'联系人'},{key:'phone',label:'联系电话'},{key:'cycle',label:'结算周期'},{key:'amount',label:'累计采购',currency:true},{key:'status',label:'状态'}]
+const rows=[{id:1,supplierNo:'GYS0001',name:'华东食品供应链',contact:'张经理',phone:'138****6621',cycle:'月结30天',amount:286420,status:'正常'},{id:2,supplierNo:'GYS0002',name:'城市生鲜配送',contact:'李主管',phone:'137****9035',cycle:'半月结',amount:196800,status:'正常'},{id:3,supplierNo:'GYS0003',name:'优选日化商贸',contact:'王女士',phone:'139****1128',cycle:'现结',amount:86500,status:'停用'}]</script>

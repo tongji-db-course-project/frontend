@@ -1,0 +1,5 @@
+<template><OperationsListPage title="菜单管理" eyebrow="系统管理 · 权限资源" primary-label="新增菜单" :metrics="metrics" :columns="columns" :rows="rows" :statuses="['启用','停用']" :form-fields="['菜单名称','路由地址','权限标识','排序']" search-placeholder="搜索菜单名称、路由或权限标识" /></template>
+<script setup lang="ts">import OperationsListPage from '../../components/OperationsListPage.vue'
+const metrics=[{label:'菜单总数',value:'26',note:'一级菜单 9 个'},{label:'页面菜单',value:'22',note:'覆盖主要业务模块'},{label:'操作权限',value:'48',note:'已分配至 4 个角色'},{label:'停用菜单',value:'2',note:'不会出现在侧边栏'}]
+const columns=[{key:'name',label:'菜单名称',emphasis:true},{key:'type',label:'类型'},{key:'path',label:'路由地址'},{key:'permission',label:'权限标识'},{key:'parent',label:'上级菜单'},{key:'sort',label:'排序'},{key:'status',label:'状态'}]
+const rows=[{id:1,name:'商品管理',type:'页面',path:'/product',permission:'product:list',parent:'基础资料',sort:10,status:'启用'},{id:2,name:'采购单列表',type:'页面',path:'/purchases',permission:'purchase:list',parent:'采购管理',sort:20,status:'启用'},{id:3,name:'旧版报表',type:'页面',path:'/reports/legacy',permission:'report:legacy',parent:'数据中心',sort:99,status:'停用'}]</script>
