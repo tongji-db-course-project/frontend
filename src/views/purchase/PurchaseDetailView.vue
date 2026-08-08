@@ -14,13 +14,19 @@
         <section class="content-card">
           <div class="card-title">基本信息</div>
           <div class="info-grid">
-            <div class="info-item"><label>供应商：</label><span>{{ detail.supplierName }}</span></div>
+            <div class="info-item">
+              <label>供应商：</label>
+              <span>{{ detail.supplierName || (detail.supplierId ? `供应商 ID: ${detail.supplierId}` : '-') }}</span>
+            </div>
             <div class="info-item"><label>采购日期：</label><span>{{ detail.purchaseDate }}</span></div>
             <div class="info-item"><label>申请人：</label><span>{{ detail.applicantName || '陈经理' }}</span></div>
-            <div class="info-item"><label>总金额：</label><span class="money">¥ {{ detail.totalAmount.toFixed(2) }}</span></div>
+            <div class="info-item">
+              <label>总金额：</label>
+              <span class="money">¥ {{ detail.totalAmount ? detail.totalAmount.toFixed(2) : '0.00' }}</span>
+            </div>
           </div>
           <div class="detail-actions">
-            <el-button type="primary" @click="$router.push(`/purchases/edit/${detail.orderId}`)">编辑</el-button>
+            <el-button v-if="detail.status === '草稿'" type="primary" @click="$router.push(`/purchases/edit/${detail.orderId}`)">编辑</el-button>
             <el-button v-if="detail.status === '草稿'" type="warning" @click="submitApproval">提交审批</el-button>
             <el-button type="danger" @click="deleteOrder">删除</el-button>
           </div>
@@ -29,27 +35,49 @@
         <section class="content-card" style="margin-top:20px">
           <div class="card-title">商品明细清单</div>
           <el-table :data="detail.details" border class="beautify-table">
-            <th-table-column type="index" label="#" />
-            <el-table-column prop="productName" label="商品名称" />
+            <el-table-column type="index" label="#" width="60" />
+            <el-table-column label="商品名称">
+              <template #default="{row}">
+                {{ row.productName || `商品 ID: ${row.productId}` }}
+              </template>
+            </el-table-column>
             <el-table-column prop="purchasePrice" label="进货单价">
-              <template #default="{row}">¥ {{ row.purchasePrice.toFixed(2) }}</template>
+              <template #default="{row}">¥ {{ row.purchasePrice?.toFixed(2) }}</template>
             </el-table-column>
             <el-table-column prop="purchaseQuantity" label="数量" />
             <el-table-column label="小计">
-              <template #default="{row}"><b>¥ {{ (row.purchasePrice * row.purchaseQuantity).toFixed(2) }}</b></template>
+              <template #default="{row}">
+                <b>¥ {{ ((row.purchasePrice || 0) * (row.purchaseQuantity || 0)).toFixed(2) }}</b>
+              </template>
             </el-table-column>
           </el-table>
         </section>
       </div>
 
-      <!-- 右侧时间轴 -->
+      <!-- 右侧进度 -->
       <aside class="detail-side">
         <section class="content-card">
           <div class="card-title">单据进度</div>
           <el-timeline>
-            <el-timeline-item timestamp="2026-08-04" type="success" color="#0bbd87">创建单据</el-timeline-item>
-            <el-timeline-item timestamp="2026-08-05" :type="detail.status !== '草稿' ? 'success' : ''">提交审批</el-timeline-item>
-            <el-timeline-item timestamp="等待中" :type="detail.status === '已入库' ? 'success' : ''">入库完成</el-timeline-item>
+            <el-timeline-item timestamp="已完成" type="success" size="large">
+              创建单据
+            </el-timeline-item>
+            
+            <el-timeline-item 
+              :timestamp="detail.status !== '草稿' ? '已完成' : '待处理'" 
+              :type="detail.status !== '草稿' ? 'success' : 'info'"
+              :hollow="detail.status === '草稿'"
+              size="large">
+              提交审批
+            </el-timeline-item>
+
+            <el-timeline-item 
+              :timestamp="detail.status === '已入库' ? '已完成' : '等待中'" 
+              :type="detail.status === '已入库' ? 'success' : 'info'"
+              :hollow="detail.status !== '已入库'"
+              size="large">
+              入库完成
+            </el-timeline-item>
           </el-timeline>
         </section>
       </aside>
@@ -62,6 +90,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { purchaseApi } from '../../api/purchase';
 import type { PurchaseOrder } from '../../types/purchase';
+import { ElMessage } from 'element-plus';
 
 const route = useRoute();
 const detail = ref<PurchaseOrder | null>(null);
@@ -70,7 +99,8 @@ const submitApproval = async () => {
   if (!detail.value) return;
   try {
     await purchaseApi.submit(detail.value.orderId);
-    detail.value.status = '待审批';
+    detail.value = { ...detail.value, status: '待审批' };
+    ElMessage.success('提交审批成功');
   } catch (error) {
     console.error(error);
   }
@@ -80,6 +110,7 @@ const deleteOrder = async () => {
   if (!detail.value) return;
   try {
     await purchaseApi.delete(detail.value.orderId);
+    ElMessage.success('删除成功');
     history.back();
   } catch (error) {
     console.error(error);
@@ -87,8 +118,13 @@ const deleteOrder = async () => {
 };
 
 onMounted(async () => {
-  const res = await purchaseApi.getDetail(Number(route.params.id));
-  detail.value = res.data.data;
+  try {
+    const res = await purchaseApi.getDetail(Number(route.params.id));
+    // 兼容 Axios 响应与拦截器直接返回 data 的两种格式
+    detail.value = res.data?.data || res.data || null;
+  } catch (error) {
+    console.error('获取采购单详情失败:', error);
+  }
 });
 </script>
 

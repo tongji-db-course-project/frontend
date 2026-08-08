@@ -27,13 +27,20 @@
 
     <div class="main-card">
       <div class="toolbar">
-        <el-input v-model="queryParams.keyword" placeholder="搜索单号、供应商..." class="search-box">
+        <el-input 
+          v-model="queryParams.keyword" 
+          placeholder="搜索单号、供应商..." 
+          class="search-box"
+          clearable
+          @keyup.enter="handleSearch" 
+          @clear="handleSearch"
+        >
           <template #prefix><el-icon><Search /></el-icon></template>
         </el-input>
-        <el-select v-model="queryParams.status" placeholder="全部状态" clearable @change="getList">
+        <el-select v-model="queryParams.status" placeholder="全部状态" clearable @change="handleSearch">
           <el-option v-for="s in ['草稿','待审批','已审批','已入库']" :key="s" :label="s" :value="s" />
         </el-select>
-        <el-button type="primary" @click="getList">查询</el-button>
+        <el-button type="primary" @click="handleSearch">查询</el-button>
       </div>
 
       <el-table :data="list" v-loading="loading" border stripe class="custom-table">
@@ -42,10 +49,14 @@
             <el-link type="primary" @click="$router.push(`/purchases/${row.orderId}`)">{{ row.orderCode }}</el-link>
           </template>
         </el-table-column>
-        <el-table-column prop="supplierName" label="供应商" />
+        <el-table-column prop="supplierName" label="供应商">
+          <template #default="{row}">
+            {{ row.supplierName || `供应商ID: ${row.supplierId}` }}
+          </template>
+        </el-table-column>
         <el-table-column prop="purchaseDate" label="日期" width="120" />
         <el-table-column prop="totalAmount" label="总金额" width="120">
-          <template #default="{row}">¥ {{ row.totalAmount.toFixed(2) }}</template>
+          <template #default="{row}">¥ {{ (row.totalAmount || 0).toFixed(2) }}</template>
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{row}">
@@ -67,22 +78,36 @@
 import { ref, reactive, onMounted } from 'vue';
 import { Plus, Search } from '@element-plus/icons-vue';
 import { purchaseApi } from '../../api/purchase';
-import type { PurchaseOrder } from '../../types/purchase';
+import type { PurchaseOrder, PurchaseQueryParams } from '../../types/purchase';
 
 const loading = ref(false);
 const list = ref<PurchaseOrder[]>([]);
 const draftCount = ref(0), pendingCount = ref(0), stockInCount = ref(0);
-const queryParams = reactive({ page: 1, size: 10, keyword: '', status: '' });
+const queryParams = reactive<PurchaseQueryParams>({ page: 1, size: 10, keyword: '', status: undefined });
 
 const getList = async () => {
   loading.value = true;
-  const res = await purchaseApi.getList(queryParams);
-  list.value = res.data.data.list;
-  // 模拟更新统计
-  draftCount.value = list.value.filter(x => x.status === '草稿').length;
-  pendingCount.value = list.value.filter(x => x.status === '待审批').length;
-  stockInCount.value = list.value.filter(x => x.status === '已入库').length;
-  loading.value = false;
+  try {
+    const res = await purchaseApi.getList(queryParams);
+    // 兼容取值逻辑，保障数据正常渲染
+    const dataList = res.data?.data?.list || res.data?.list || [];
+    list.value = dataList;
+
+    // 更新统计数据
+    draftCount.value = list.value.filter(x => x.status === '草稿').length;
+    pendingCount.value = list.value.filter(x => x.status === '待审批').length;
+    stockInCount.value = list.value.filter(x => x.status === '已入库').length;
+  } catch (error) {
+    console.error('获取采购列表失败:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 搜索处理函数
+const handleSearch = () => {
+  queryParams.page = 1; 
+  getList();
 };
 
 onMounted(getList);
