@@ -17,3 +17,11 @@ export interface PageResult<T> {
     page: number;
     size: number;
 }
+
+export interface ApiResponse<T = any> {
+  code: number;
+  message: string;
+  data: T;
+}
+
+

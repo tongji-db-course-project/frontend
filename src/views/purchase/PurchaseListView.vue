@@ -1,40 +1,138 @@
 <template>
   <div class="purchase-page">
-    <header class="page-head"><div><p>采购管理 · 订单流转</p><h1>采购管理</h1></div><button class="primary" @click="openForm"><Plus />新建采购单</button></header>
-    <section class="stats"><article><small>本月采购额</small><strong>¥ 186,420</strong><em>较上月 ↑ 12.6%</em></article><article><small>待提交</small><strong>{{ count('草稿') }}</strong><em>请及时完善采购单</em></article><article><small>待审批</small><strong>{{ count('待审批') }}</strong><em>等待负责人处理</em></article><article><small>待入库</small><strong>{{ count('审批通过') }}</strong><em>到货后办理入库</em></article></section>
-    <section class="card"><div class="toolbar"><label><Search /><input v-model="keyword" placeholder="搜索采购单号、供应商" /></label><select v-model="status"><option value="">全部状态</option><option v-for="s in statuses" :key="s">{{ s }}</option></select><input v-model="date" type="date"/><button class="query">查询</button><button @click="reset">重置</button><span>共 {{ filtered.length }} 张采购单</span></div>
-      <div class="table-wrap"><table><thead><tr><th>采购单号</th><th>供应商</th><th>申请人</th><th>采购日期</th><th>商品数</th><th>采购金额</th><th>状态</th><th>操作</th></tr></thead><tbody><tr v-for="item in filtered" :key="item.purchaseId"><td><button class="order-no" @click="showDetail(item)">{{ item.purchaseNo }}</button><small class="block">{{ item.remark }}</small></td><td><b>{{ item.supplierName }}</b></td><td>{{ item.applicantName }}</td><td>{{ item.purchaseDate }}</td><td>{{ item.productCount }} 种 / {{ item.totalQty }} 件</td><td><b>¥ {{ item.totalAmount.toFixed(2) }}</b></td><td><span class="tag" :class="tone(item.status)">{{ item.status }}</span></td><td class="actions"><button @click="showDetail(item)">详情</button><button v-if="item.status==='草稿'" @click="submit(item)">提交</button><button v-if="item.status==='待审批'" @click="approve(item)">审批</button><button v-if="item.status==='审批通过'" @click="stockIn(item)">入库</button></td></tr></tbody></table></div>
-      <footer><span>显示 1–{{ filtered.length }} 条</span><div><button disabled>‹</button><button class="active">1</button><button>›</button></div></footer>
+    <header class="page-head">
+      <div>
+        <p>首页 / 采购管理 / 采购单列表</p>
+        <h1>采购管理</h1>
+      </div>
+      <button class="primary-btn" @click="$router.push('/purchases/create')">
+        <el-icon><Plus /></el-icon>新建采购单
+      </button>
+    </header>
+
+    <section class="stats">
+      <article>
+        <small>待提交</small>
+        <strong>{{ draftCount }}</strong>
+      </article>
+      <article class="warning">
+        <small>待审批</small>
+        <strong>{{ pendingCount }}</strong>
+      </article>
+      <article class="success">
+        <small>已入库</small>
+        <strong>{{ stockInCount }}</strong>
+      </article>
     </section>
-    <el-dialog v-model="formVisible" title="新建采购单" width="720px"><el-form label-position="top"><div class="form-grid"><el-form-item label="供应商" required><el-select v-model="form.supplierName"><el-option label="华东食品供应链" value="华东食品供应链"/><el-option label="城市生鲜配送" value="城市生鲜配送"/></el-select></el-form-item><el-form-item label="采购日期"><el-date-picker v-model="form.purchaseDate" value-format="YYYY-MM-DD"/></el-form-item></div><el-form-item label="备注"><el-input v-model="form.remark" /></el-form-item></el-form>
-      <div class="detail-editor"><header><b>采购商品明细</b><button @click="addLine"><Plus />添加商品</button></header><table><thead><tr><th>商品</th><th>数量</th><th>采购单价</th><th>小计</th><th></th></tr></thead><tbody><tr v-for="(line,i) in form.details" :key="i"><td><el-input v-model="line.productName"/></td><td><el-input-number v-model="line.purchaseQuantity" :min="1"/></td><td><el-input-number v-model="line.purchasePrice" :min="0" :precision="2"/></td><td>¥ {{ (line.purchaseQuantity*line.purchasePrice).toFixed(2) }}</td><td><button @click="form.details.splice(i,1)">删除</button></td></tr></tbody></table></div>
-      <template #footer><el-button @click="formVisible=false">取消</el-button><el-button @click="saveDraft">保存草稿</el-button><el-button type="primary" @click="saveAndSubmit">保存并提交</el-button></template></el-dialog>
-    <el-drawer v-model="detailVisible" title="采购单详情" size="500px"><div v-if="selected" class="detail"><header><div><small>采购单号</small><h2>{{ selected.purchaseNo }}</h2></div><span class="tag" :class="tone(selected.status)">{{ selected.status }}</span></header><dl><div><dt>供应商</dt><dd>{{ selected.supplierName }}</dd></div><div><dt>申请人</dt><dd>{{ selected.applicantName }}</dd></div><div><dt>采购日期</dt><dd>{{ selected.purchaseDate }}</dd></div><div><dt>采购金额</dt><dd>¥ {{ selected.totalAmount.toFixed(2) }}</dd></div><div><dt>备注</dt><dd>{{ selected.remark }}</dd></div></dl><h3>状态流转</h3><ol><li class="done">采购单已创建</li><li :class="{done:selected.status!=='草稿'}">已提交审批</li><li :class="{done:['审批通过','已入库'].includes(selected.status)}">审批通过</li><li :class="{done:selected.status==='已入库'}">采购入库完成</li></ol></div></el-drawer>
+
+    <div class="main-card">
+      <div class="toolbar">
+        <el-input 
+          v-model="queryParams.keyword" 
+          placeholder="搜索单号、供应商..." 
+          class="search-box"
+          clearable
+          @keyup.enter="handleSearch" 
+          @clear="handleSearch"
+        >
+          <template #prefix><el-icon><Search /></el-icon></template>
+        </el-input>
+        <el-select v-model="queryParams.status" placeholder="全部状态" clearable @change="handleSearch">
+          <el-option v-for="s in ['草稿','待审批','已审批','已入库']" :key="s" :label="s" :value="s" />
+        </el-select>
+        <el-button type="primary" @click="handleSearch">查询</el-button>
+      </div>
+
+      <el-table :data="list" v-loading="loading" border stripe class="custom-table">
+        <el-table-column prop="orderCode" label="采购单号">
+          <template #default="{row}">
+            <el-link type="primary" @click="$router.push(`/purchases/${row.orderId}`)">{{ row.orderCode }}</el-link>
+          </template>
+        </el-table-column>
+        <el-table-column prop="supplierName" label="供应商">
+          <template #default="{row}">
+            {{ row.supplierName || `供应商ID: ${row.supplierId}` }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="purchaseDate" label="日期" width="120" />
+        <el-table-column prop="totalAmount" label="总金额" width="120">
+          <template #default="{row}">¥ {{ (row.totalAmount || 0).toFixed(2) }}</template>
+        </el-table-column>
+        <el-table-column label="状态" width="100">
+          <template #default="{row}">
+            <span class="status-tag" :class="row.status">{{ row.status }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="150" fixed="right">
+          <template #default="{row}">
+            <el-button link type="primary" @click="$router.push(`/purchases/${row.orderId}`)">详情</el-button>
+            <el-button v-if="row.status==='草稿'" link type="primary" @click="$router.push(`/purchases/edit/${row.orderId}`)">编辑</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
   </div>
 </template>
-<script setup>
-import { computed, reactive, ref } from 'vue'
-import { Plus, Search } from '@element-plus/icons-vue'
-const statuses=['草稿','待审批','审批通过','已入库','已驳回']
-const purchases=ref([
- {purchaseId:1001,purchaseNo:'CG202608040001',supplierId:1,supplierName:'华东食品供应链',applicantId:3,applicantName:'陈经理',purchaseDate:'2026-08-04',productCount:6,totalQty:120,totalAmount:12860,status:'待审批',remark:'八月第一批常规补货'},
- {purchaseId:1002,purchaseNo:'CG202608030002',supplierId:2,supplierName:'城市生鲜配送',applicantId:3,applicantName:'陈经理',purchaseDate:'2026-08-03',productCount:4,totalQty:85,totalAmount:6420,status:'审批通过',remark:'乳品烘焙补货'},
- {purchaseId:1003,purchaseNo:'CG202608020003',supplierId:1,supplierName:'华东食品供应链',applicantId:4,applicantName:'林晓',purchaseDate:'2026-08-02',productCount:8,totalQty:260,totalAmount:23680,status:'已入库',remark:'饮料酒水集中采购'},
- {purchaseId:1004,purchaseNo:'CG202608010004',supplierId:2,supplierName:'城市生鲜配送',applicantId:4,applicantName:'林晓',purchaseDate:'2026-08-01',productCount:2,totalQty:36,totalAmount:2180,status:'草稿',remark:'临时采购'},
- {purchaseId:1005,purchaseNo:'CG202607300005',supplierId:1,supplierName:'华东食品供应链',applicantId:3,applicantName:'陈经理',purchaseDate:'2026-07-30',productCount:3,totalQty:60,totalAmount:7980,status:'已驳回',remark:'采购价格待复核'},
-])
-const keyword=ref(''),status=ref(''),date=ref(''),formVisible=ref(false),detailVisible=ref(false),selected=ref(null)
-const form=reactive({supplierName:'',purchaseDate:'2026-08-04',remark:'',details:[]})
-const filtered=computed(()=>purchases.value.filter(x=>(!keyword.value||x.purchaseNo.includes(keyword.value)||x.supplierName.includes(keyword.value))&&(!status.value||x.status===status.value)&&(!date.value||x.purchaseDate===date.value)))
-const count=s=>purchases.value.filter(x=>x.status===s).length
-function reset(){keyword.value='';status.value='';date.value=''}
-function tone(s){return {草稿:'gray',待审批:'orange',审批通过:'blue',已入库:'green',已驳回:'red'}[s]}
-function openForm(){Object.assign(form,{supplierName:'',purchaseDate:'2026-08-04',remark:'',details:[{productName:'',purchaseQuantity:1,purchasePrice:0}]});formVisible.value=true}
-function addLine(){form.details.push({productName:'',purchaseQuantity:1,purchasePrice:0})}
-function saveWithStatus(state){const total=form.details.reduce((n,x)=>n+x.purchaseQuantity*x.purchasePrice,0);purchases.value.unshift({purchaseId:Date.now(),purchaseNo:`CG20260804${String(purchases.value.length+1).padStart(4,'0')}`,supplierId:1,supplierName:form.supplierName||'未选择供应商',applicantId:3,applicantName:'当前用户',purchaseDate:form.purchaseDate,productCount:form.details.length,totalQty:form.details.reduce((n,x)=>n+x.purchaseQuantity,0),totalAmount:total,status:state,remark:form.remark});formVisible.value=false}
-const saveDraft=()=>saveWithStatus('草稿'),saveAndSubmit=()=>saveWithStatus('待审批')
-function submit(x){x.status='待审批'}function approve(x){x.status='审批通过'}function stockIn(x){x.status='已入库'}function showDetail(x){selected.value=x;detailVisible.value=true}
+
+<script setup lang="ts">
+import { ref, reactive, onMounted } from 'vue';
+import { Plus, Search } from '@element-plus/icons-vue';
+import { purchaseApi } from '../../api/purchase';
+import type { PurchaseOrder, PurchaseQueryParams } from '../../types/purchase';
+
+const loading = ref(false);
+const list = ref<PurchaseOrder[]>([]);
+const draftCount = ref(0), pendingCount = ref(0), stockInCount = ref(0);
+const queryParams = reactive<PurchaseQueryParams>({ page: 1, size: 10, keyword: '', status: undefined });
+
+const getList = async () => {
+  loading.value = true;
+  try {
+    const res = await purchaseApi.getList(queryParams);
+    // 兼容取值逻辑，保障数据正常渲染
+    const dataList = res.data?.data?.list || res.data?.list || [];
+    list.value = dataList;
+
+    // 更新统计数据
+    draftCount.value = list.value.filter(x => x.status === '草稿').length;
+    pendingCount.value = list.value.filter(x => x.status === '待审批').length;
+    stockInCount.value = list.value.filter(x => x.status === '已入库').length;
+  } catch (error) {
+    console.error('获取采购列表失败:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 搜索处理函数
+const handleSearch = () => {
+  queryParams.page = 1; 
+  getList();
+};
+
+onMounted(getList);
 </script>
+
 <style scoped>
-.purchase-page{color:#29384f}.page-head{margin:3px 2px 14px;display:flex;align-items:flex-end;justify-content:space-between}.page-head p{margin:0;color:#98a4b6;font-size:12px}.page-head h1{margin:3px 0 0;font-size:24px}.primary{height:36px;padding:0 14px;display:flex;align-items:center;gap:7px;color:#fff;border:0;border-radius:7px;background:#1677ff}.primary svg{width:14px}.stats{margin-bottom:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stats article,.card{border:1px solid #e6ebf2;border-radius:8px;background:#fff}.stats article{padding:15px;display:grid}.stats small{color:#8290a3;font-size:10px}.stats strong{font-size:21px}.stats em{color:#19a77b;font-size:9px;font-style:normal}.card{padding:15px}.toolbar{margin-bottom:14px;display:flex;align-items:center;gap:9px}.toolbar label{width:260px;height:34px;padding:0 10px;display:flex;align-items:center;gap:7px;border:1px solid #dde4ed;border-radius:6px}.toolbar svg{width:15px}.toolbar input{border:1px solid #dde4ed;height:34px}.toolbar label input{width:100%;height:auto;border:0}.toolbar select,.toolbar>button{height:34px;padding:0 11px;border:1px solid #dde4ed;border-radius:6px;background:#fff}.toolbar .query{color:#fff;background:#1677ff}.toolbar>span{margin-left:auto;color:#9ba6b5;font-size:10px}.table-wrap{overflow-x:auto;border:1px solid #e8edf3;border-radius:7px}table{width:100%;min-width:1000px;border-collapse:collapse}th,td{padding:12px 13px;text-align:left;border-bottom:1px solid #edf1f5;font-size:11px}th{color:#718096;background:#f7f9fc}.order-no{padding:0;color:#1677ff;border:0;background:transparent}.block{display:block;color:#9ba6b5;font-size:9px}.tag{padding:4px 7px;border-radius:4px;font-size:9px}.tag.gray{color:#748196;background:#f0f2f5}.tag.orange{color:#d57b13;background:#fff3df}.tag.blue{color:#1677ff;background:#eaf3ff}.tag.green{color:#169c73;background:#e8f8f2}.tag.red{color:#df555a;background:#fff0f0}.actions{white-space:nowrap}.actions button{margin-right:9px;color:#1677ff;border:0;background:transparent}.card footer{padding-top:13px;display:flex;justify-content:space-between;color:#99a5b5;font-size:10px}.card footer div{display:flex;gap:5px}.card footer button{width:28px;height:28px;border:1px solid #e0e6ee;border-radius:5px;background:#fff}.card footer .active{color:#fff;background:#1677ff}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.form-grid :deep(.el-select),.form-grid :deep(.el-date-editor){width:100%}.detail-editor{overflow-x:auto;border:1px solid #e6ebf2;border-radius:7px}.detail-editor>header{padding:10px;display:flex;justify-content:space-between}.detail-editor>header button,.detail-editor td button{display:flex;align-items:center;gap:4px;color:#1677ff;border:0;background:transparent}.detail-editor table{min-width:620px}.detail>header{display:flex;justify-content:space-between;align-items:center}.detail h2{margin:3px 0}.detail small{color:#98a4b6}.detail dl{display:grid;gap:11px}.detail dl div{display:grid;grid-template-columns:90px 1fr}.detail dt{color:#98a4b6}.detail dd{margin:0}.detail ol{padding-left:20px;display:grid;gap:12px;color:#a2abb8}.detail li.done{color:#169c73}@media(max-width:1000px){.stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:680px){.stats{grid-template-columns:1fr}.toolbar{flex-wrap:wrap}.toolbar label{width:100%}.toolbar>span{width:100%;margin:0}.form-grid{grid-template-columns:1fr}}
+.purchase-page { padding: 20px; background: #f0f2f5; min-height: 100vh; }
+.page-head { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+.page-head p { font-size: 12px; color: #8c8c8c; margin: 0; }
+.page-head h1 { margin: 4px 0 0; font-size: 22px; }
+.primary-btn { background: #1890ff; color: #fff; border: 0; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+.stats article { background: #fff; padding: 20px; border-radius: 8px; border-left: 4px solid #1890ff; }
+.stats article.warning { border-left-color: #faad14; }
+.stats article.success { border-left-color: #52c41a; }
+.stats small { color: #8c8c8c; }
+.stats strong { display: block; font-size: 24px; margin-top: 5px; }
+
+.main-card { background: #fff; padding: 20px; border-radius: 8px; }
+.toolbar { margin-bottom: 20px; display: flex; gap: 10px; }
+.search-box { width: 260px; }
+
+.status-tag { padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.status-tag.草稿 { background: #f5f5f5; color: #595959; }
+.status-tag.待审批 { background: #fff7e6; color: #faad14; }
+.status-tag.已入库 { background: #f6ffed; color: #52c41a; }
 </style>

@@ -24,12 +24,12 @@ const router = createRouter({
             {path:'members',component:()=>import('../views/member/MemberListView.vue')},
 
             //采购管理
-            {path:'purchases',component:()=>import('../views/purchase/PurchaseListView.vue')},
-            // 新建操作已合并到采购单列表页，保留旧地址兼容历史链接
-            {path:'purchases/create',redirect:'/purchases'},
-            {path:'purchases/:id',component:()=>import('../views/purchase/PurchaseDetailView.vue')},
+            {path: 'purchases',name: 'PurchaseList',component: () => import('../views/purchase/PurchaseListView.vue'),meta: { title: '采购单列表', parent: '采购管理' },},
+            {path:'purchases/create',name: 'PurchaseCreate',component:()=>import('../views/purchase/PurchaseFormView.vue'),meta: { title: '新建采购单', parent: '采购管理' }},
+            {path:'purchases/edit/:id',name: 'PurchaseEdit',component:()=>import('../views/purchase/PurchaseFormView.vue'),meta: { title: '编辑采购单', parent: '采购管理' }},
+            {path:'purchases/:id',name: 'PurchaseDetail',component:()=>import('../views/purchase/PurchaseDetailView.vue'),meta: { title: '采购单详情', parent: '采购管理' }},
 
-            //销售管理
+            // 销售管理
             {path:'sales',component:()=>import('../views/sale/SaleListView.vue')},
             {path:'sales/checkout',component:()=>import('../views/sale/CheckoutView.vue')},
             {path:'sales/:id',component:()=>import('../views/sale/SaleDetailView.vue')},
