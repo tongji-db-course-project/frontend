@@ -1,49 +1,23 @@
-export interface PageResult<T> {
-  list: T[]
-  total: number
-  page: number
-  size: number
-}
+import type { PageQuery } from './common'
 
 export interface Member {
   memberId: number
   memberName: string
   phone: string
-  gender?: string | null
+  gender?: '男' | '女' | '未知' | null
   birthday?: string | null
   points?: number | null
+  memberTag?: string | null
   totalAmount?: number | null
-  recentYearAmount?: number | null
-  levelName?: string | null
-  discountRate?: number | null
-  status?: string | null
-  registerTime?: string | null
+  createTime?: string | null
 }
 
-export interface MemberQuery {
-  page: number
-  size: number
-  keyword?: string
-  status?: string
-}
+export interface MemberQuery extends PageQuery {}
 
 export interface MemberDto {
   memberName: string
   phone: string
-  gender?: string
-  birthday?: string
-  status?: string
-  initialPoints?: number
-}
-
-export interface SaleOrder {
-  saleId: number
-  saleNo?: string | null
-  saleDate?: string | null
-  totalAmount?: number | null
-  discountAmount?: number | null
-  paidAmount?: number | null
-  payType?: string | null
-  status?: string | null
-  pointsChange?: number | null
+  gender?: '男' | '女' | '未知'
+  birthday?: string | null
+  memberTag?: string | null
 }

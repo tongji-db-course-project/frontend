@@ -7,9 +7,7 @@ export interface SaleOrder {
   saleId: number
   saleNo: string
   memberId?: number | null
-  memberName?: string | null
   userId: number
-  cashierName?: string | null
   saleDate?: string | null
   totalAmount?: number | null
   discountAmount?: number | null
@@ -20,34 +18,35 @@ export interface SaleOrder {
   updateTime?: string | null
 }
 
-export interface SaleItem {
-  saleDetailId?: number
+export interface SaleCheckoutDetail {
   productId: number
-  productName?: string
-  barcode?: string
-  specification?: string | null
   saleQuantity: number
   salePrice: number
-  subtotal?: number
-}
-
-export interface SaleDetail extends SaleOrder {
-  items?: SaleItem[]
-  returnCount?: number
 }
 
 export interface SaleQuery extends PageQuery {
-  payType?: string
-  startDate?: string
-  endDate?: string
-}
-
-export interface CreateSalePayload {
   memberId?: number
-  payType: PayType
-  couponId?: number
-  pointsUsed?: number
-  items: Array<{ productId: number; quantity: number }>
 }
 
-export interface CreateSaleResult extends SaleDetail {}
+export interface SaleCheckoutPayload {
+  memberId?: number | null
+  userId: number
+  payType: PayType
+  couponId?: number | null
+  usePoints?: number
+  discountAmount?: number
+  details: SaleCheckoutDetail[]
+}
+
+export interface SaleCancelPayload {
+  operatorId: number
+  reason: string
+}
+
+export interface OrderStatusResult {
+  orderId: number
+  orderCode: string
+  status: string
+  operatorId?: number | null
+  changeTime: string
+}
