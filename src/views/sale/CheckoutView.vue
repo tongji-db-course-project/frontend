@@ -119,18 +119,14 @@ async function findMember() {
 
 async function checkout() {
   if (!cart.value.length) return
-  const userId = Number(authStore.userInfo?.userId)
-  if (!Number.isInteger(userId) || userId <= 0) { ElMessage.warning('当前登录信息缺少收银员编号，请重新登录'); return }
   submitting.value = true
   try {
-    lastSale.value = await saleApi.checkout({
+    lastSale.value = await saleApi.create({
       memberId: member.value?.memberId,
-      userId,
+      warehouseId: 1,
       payType: payType.value,
-      couponId: couponId.value,
-      usePoints: usePoints.value || undefined,
-      discountAmount: discountAmount.value || undefined,
-      details: cart.value.map(item => ({ productId: item.product.productId, saleQuantity: item.quantity, salePrice: effectivePrice(item.product) })),
+      redeemPoints: usePoints.value || undefined,
+      items: cart.value.map(item => ({ productId: item.product.productId, quantity: item.quantity })),
     })
     cart.value = []; member.value = null; memberPhone.value = ''; couponId.value = undefined; usePoints.value = 0; discountAmount.value = 0
     ElMessage.success('收款成功')

@@ -1,0 +1,19 @@
+# 忽略目录
+node_modules/
+dist/
+build/
+.vscode/
+
+# 忽略特定文件
+*.log
+*.min.js
+
+# 忽略大文件/二进制
+*.png
+*.jpg
+*.pdf
+*.zip
+*.docx
+
+# 取反（不忽略）
+!important.js
