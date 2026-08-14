@@ -12,7 +12,7 @@
             <template #default="{ row }"><div class="biz-product"><span class="biz-product__avatar">{{ row.productName.slice(0, 1) }}</span><div><b>{{ row.productName }}</b><small>{{ row.barcode || '-' }} · {{ row.specification || '暂无规格' }}</small></div></div></template>
           </el-table-column>
           <el-table-column label="售价" width="105" align="right">
-            <template #default="{ row }"><strong>{{ formatMoney(effectivePrice(row)) }}</strong><small v-if="row.isPromotion === '是' && row.promotionPrice != null" class="original-price">{{ formatMoney(row.salePrice) }}</small></template>
+            <template #default="{ row }"><strong>{{ formatMoney(effectivePrice(row)) }}</strong></template>
           </el-table-column>
           <el-table-column label="操作" width="95" align="center"><template #default="{ row }"><el-button type="primary" link @click="addToCart(row)">加入</el-button></template></el-table-column>
         </el-table>
@@ -31,12 +31,11 @@
         </div>
         <div class="checkout-options">
           <label>支付方式</label><el-radio-group v-model="payType"><el-radio-button value="现金">现金</el-radio-button><el-radio-button value="微信">微信</el-radio-button><el-radio-button value="支付宝">支付宝</el-radio-button></el-radio-group>
-          <label>优惠券编号</label><el-input-number v-model="couponId" :min="1" :precision="0" controls-position="right" :disabled="!member" placeholder="不使用优惠券" />
-          <label>使用积分</label><el-input-number v-model="usePoints" :min="0" :max="member?.points ?? 0" :precision="0" :disabled="!member" />
-          <label>其他优惠</label><el-input-number v-model="discountAmount" :min="0" :max="totalAmount" :precision="2" controls-position="right" />
+          <label>出库仓库</label><el-input-number v-model="warehouseId" :min="1" :precision="0" controls-position="right" />
+          <label>兑换积分</label><el-input-number v-model="redeemPoints" :min="0" :max="member?.points ?? 0" :precision="0" :disabled="!member" />
         </div>
-        <el-alert title="会员折扣、优惠券和积分抵扣金额由后端结算接口最终计算。" type="info" :closable="false" show-icon />
-        <dl class="checkout-total"><div><dt>商品金额</dt><dd>{{ formatMoney(totalAmount) }}</dd></div><div><dt>其他优惠</dt><dd>-{{ formatMoney(discountAmount) }}</dd></div><div class="grand"><dt>后端结算前金额</dt><dd>{{ formatMoney(preCheckoutAmount) }}</dd></div></dl>
+        <el-alert title="商品价格、库存扣减、积分兑换和最终实付金额由后端结算。" type="info" :closable="false" show-icon />
+        <dl class="checkout-total"><div><dt>商品金额</dt><dd>{{ formatMoney(totalAmount) }}</dd></div><div class="grand"><dt>预计金额</dt><dd>{{ formatMoney(totalAmount) }}</dd></div></dl>
         <el-button size="large" type="primary" :loading="submitting" :disabled="!cart.length" @click="checkout">确认收款</el-button>
       </section>
     </div>
@@ -53,17 +52,15 @@ import PageHeader from '../../components/PageHeader.vue'
 import { productApi } from '../../api/product'
 import { memberApi } from '../../api/member'
 import { saleApi } from '../../api/sale'
-import { useAuthStore } from '../../stores/auth'
-import type { Product } from '../../types/product'
+import type { ProductListItem } from '../../types/product'
 import type { Member } from '../../types/member'
 import type { PayType, SaleOrder } from '../../types/sale'
 import { formatMoney } from '../../utils/format'
 
-type CheckoutProduct = Product & { isPromotion?: string; promotionPrice?: number | null }
+type CheckoutProduct = ProductListItem
 interface CartItem { product: CheckoutProduct; quantity: number }
 
 const router = useRouter()
-const authStore = useAuthStore()
 const productKeyword = ref('')
 const products = ref<CheckoutProduct[]>([])
 const productLoading = ref(false)
@@ -72,29 +69,22 @@ const memberPhone = ref('')
 const member = ref<Member | null>(null)
 const memberLoading = ref(false)
 const payType = ref<PayType>('微信')
-const couponId = ref<number | undefined>()
-const usePoints = ref(0)
-const discountAmount = ref(0)
+const warehouseId = ref(1)
+const redeemPoints = ref(0)
 const submitting = ref(false)
 const lastSale = ref<SaleOrder | null>(null)
 
-const effectivePrice = (product: CheckoutProduct) => product.isPromotion === '是' && product.promotionPrice != null ? Number(product.promotionPrice) : Number(product.salePrice)
+const effectivePrice = (product: CheckoutProduct) => Number(product.salePrice || 0)
 const cartQuantity = computed(() => cart.value.reduce((sum, item) => sum + item.quantity, 0))
 const totalAmount = computed(() => cart.value.reduce((sum, item) => sum + effectivePrice(item.product) * item.quantity, 0))
-const preCheckoutAmount = computed(() => Math.max(0, totalAmount.value - Number(discountAmount.value || 0)))
 
 async function searchProducts() {
   const keyword = productKeyword.value.trim()
   if (!keyword) return
   productLoading.value = true
   try {
-    if (/^\d{8,}$/.test(keyword)) {
-      const item = await productApi.getByBarcode(keyword)
-      products.value = item ? [item as CheckoutProduct] : []
-    } else {
-      const result = await productApi.getList({ page: 1, size: 20, keyword, status: '在售' })
-      products.value = (result?.list ?? []) as unknown as CheckoutProduct[]
-    }
+    const result = await productApi.getList({ page: 1, size: 20, keyword, status: '在售' })
+    products.value = result?.list ?? []
   } catch { products.value = [] } finally { productLoading.value = false }
 }
 
@@ -107,32 +97,28 @@ function addToCart(product: CheckoutProduct) {
 
 function removeFromCart(productId: number) { cart.value = cart.value.filter(item => item.product.productId !== productId) }
 async function clearCart() { await ElMessageBox.confirm('确认清空购物车吗？', '清空购物车', { type: 'warning' }); cart.value = [] }
-function removeMember() { member.value = null; couponId.value = undefined; usePoints.value = 0 }
+function removeMember() { member.value = null; redeemPoints.value = 0 }
 
 async function findMember() {
   if (!memberPhone.value.trim()) return
   memberLoading.value = true
-  try { member.value = await memberApi.getByPhone(memberPhone.value.trim()); couponId.value = undefined; usePoints.value = 0 }
+  try { member.value = await memberApi.getByPhone(memberPhone.value.trim()); redeemPoints.value = 0 }
   catch { removeMember() }
   finally { memberLoading.value = false }
 }
 
 async function checkout() {
   if (!cart.value.length) return
-  const userId = Number(authStore.userInfo?.userId)
-  if (!Number.isInteger(userId) || userId <= 0) { ElMessage.warning('当前登录信息缺少收银员编号，请重新登录'); return }
   submitting.value = true
   try {
     lastSale.value = await saleApi.checkout({
       memberId: member.value?.memberId,
-      userId,
+      warehouseId: warehouseId.value,
       payType: payType.value,
-      couponId: couponId.value,
-      usePoints: usePoints.value || undefined,
-      discountAmount: discountAmount.value || undefined,
-      details: cart.value.map(item => ({ productId: item.product.productId, saleQuantity: item.quantity, salePrice: effectivePrice(item.product) })),
+      redeemPoints: redeemPoints.value,
+      items: cart.value.map(item => ({ productId: item.product.productId, quantity: item.quantity })),
     })
-    cart.value = []; member.value = null; memberPhone.value = ''; couponId.value = undefined; usePoints.value = 0; discountAmount.value = 0
+    cart.value = []; member.value = null; memberPhone.value = ''; redeemPoints.value = 0
     ElMessage.success('收款成功')
   } finally { submitting.value = false }
 }

@@ -20,41 +20,32 @@ export interface DailySettlement {
   createTime?: string | null
 }
 
+export interface DailySalesStatistics {
+  statDate: string
+  orderCount: number
+  totalAmount: number
+  paidAmount: number
+  refundAmount: number
+  netAmount: number
+}
+
 export interface ProductRankItem {
   productId: number
   productName: string
   saleQuantity: number
   saleAmount: number
-  grossProfit?: number
-  rank: number
-}
-
-export interface ProductRankResult {
-  quantityRanking: ProductRankItem[]
-  amountRanking: ProductRankItem[]
-}
-
-export interface ProfitTrendItem {
-  date: string
-  salesAmount: number
-  costAmount: number
-  grossProfit: number
 }
 
 export interface ProfitStatistics {
-  totalSales: number
-  totalCost: number
+  totalSaleAmount: number
+  totalPurchaseCost: number
   grossProfit: number
-  grossMargin: number
-  trend: ProfitTrendItem[]
+  grossProfitRate: number
 }
 
 export interface InventoryStatistics {
-  totalProducts: number
-  warningProducts: number
-  outOfStockProducts: number
-  totalStockValue?: number
-  warehouseDistribution: Array<{ name: string; value: number }>
-  categoryDistribution: Array<{ name: string; value: number }>
-  warningRanking: Array<{ productName: string; currentStock: number; stockWarning: number }>
+  productCount: number
+  totalStock: number
+  warningProductCount: number
+  warehouseCount: number
 }

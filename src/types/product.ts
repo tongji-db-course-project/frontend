@@ -1,12 +1,20 @@
 import type { PageQuery } from './common'
 
 export interface ProductListItem {
-  id: number
-  name: string
-  price: number
-  status: 'on_sale' | 'off_shelf' | string
-  stock: number
-  createTime: string
+  productId: number
+  productName: string
+  barcode?: string | null
+  specification?: string | null
+  purchasePrice?: number | null
+  salePrice?: number | null
+  stockWarning?: number | null
+  unit?: string | null
+  status?: string | null
+  categoryId: number
+  categoryName?: string | null
+  supplierId: number
+  supplierName?: string | null
+  currentStock: number
 }
 
 export interface Product {

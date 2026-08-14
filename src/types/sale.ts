@@ -20,8 +20,7 @@ export interface SaleOrder {
 
 export interface SaleCheckoutDetail {
   productId: number
-  saleQuantity: number
-  salePrice: number
+  quantity: number
 }
 
 export interface SaleQuery extends PageQuery {
@@ -30,23 +29,8 @@ export interface SaleQuery extends PageQuery {
 
 export interface SaleCheckoutPayload {
   memberId?: number | null
-  userId: number
+  warehouseId: number
   payType: PayType
-  couponId?: number | null
-  usePoints?: number
-  discountAmount?: number
-  details: SaleCheckoutDetail[]
-}
-
-export interface SaleCancelPayload {
-  operatorId: number
-  reason: string
-}
-
-export interface OrderStatusResult {
-  orderId: number
-  orderCode: string
-  status: string
-  operatorId?: number | null
-  changeTime: string
+  redeemPoints: number
+  items: SaleCheckoutDetail[]
 }

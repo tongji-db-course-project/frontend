@@ -30,7 +30,7 @@
         <select v-model="query.status" @change="search">
           <option value="">全部状态</option>
           <option value="启用">启用</option>
-          <option value="停用">停用</option>
+          <option value="禁用">禁用</option>
         </select>
         <button class="query-button" @click="search">查询</button>
         <button class="filter-button" @click="resetQuery">重置</button>
@@ -41,8 +41,8 @@
         <table>
           <thead>
             <tr>
-              <th>会员信息</th><th>手机号</th><th>性别</th><th>生日</th><th>会员标签</th>
-              <th>累计消费</th><th>可用积分</th><th>创建时间</th><th>操作</th>
+              <th>会员信息</th><th>手机号</th><th>性别</th><th>会员等级</th><th>状态</th>
+              <th>累计消费</th><th>可用积分</th><th>注册时间</th><th>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -55,11 +55,11 @@
               </td>
               <td>{{ maskPhone(member.phone) }}</td>
               <td>{{ member.gender || '未知' }}</td>
-              <td>{{ formatDate(member.birthday) }}</td>
-              <td>{{ member.memberTag || '—' }}</td>
+              <td>{{ member.levelName || '普通会员' }}</td>
+              <td>{{ member.status || '—' }}</td>
               <td>{{ formatMoney(member.totalAmount) }}</td>
               <td>{{ Number(member.points || 0).toLocaleString() }}</td>
-              <td>{{ formatDateTime(member.createTime) }}</td>
+              <td>{{ formatDateTime(member.registerTime) }}</td>
               <td class="actions">
                 <button @click="showDetail(member)">详情/轨迹</button>
                 <button @click="openEdit(member)">编辑</button>
@@ -93,8 +93,8 @@
           <el-form-item label="会员姓名" prop="memberName"><el-input v-model.trim="form.memberName" placeholder="请输入会员姓名" /></el-form-item>
           <el-form-item label="手机号" prop="phone"><el-input v-model.trim="form.phone" maxlength="11" placeholder="请输入 11 位手机号" /></el-form-item>
           <el-form-item label="性别"><el-select v-model="form.gender" placeholder="请选择"><el-option label="男" value="男" /><el-option label="女" value="女" /><el-option label="未知" value="未知" /></el-select></el-form-item>
-          <el-form-item label="生日"><el-date-picker v-model="form.birthday" type="date" value-format="YYYY-MM-DD" placeholder="请选择生日" /></el-form-item>
-          <el-form-item label="会员标签"><el-input v-model.trim="form.memberTag" maxlength="50" placeholder="如：学生" /></el-form-item>
+          <el-form-item label="会员等级"><el-select v-model="form.levelName"><el-option label="普通会员" value="普通会员" /><el-option label="黄金会员" value="黄金会员" /><el-option label="钻石会员" value="钻石会员" /></el-select></el-form-item>
+          <el-form-item label="状态"><el-select v-model="form.status"><el-option label="启用" value="启用" /><el-option label="禁用" value="禁用" /></el-select></el-form-item>
         </div>
       </el-form>
       <template #footer>
@@ -109,13 +109,13 @@
         <template v-if="selected">
           <section class="profile-card">
             <div class="avatar">{{ selected.memberName?.slice(0, 1) }}</div>
-            <div><h3>{{ selected.memberName }}</h3><p>普通会员</p></div>
+            <div><h3>{{ selected.memberName }}</h3><p>{{ selected.levelName || '普通会员' }}</p></div>
             <button class="drawer-edit" @click="openEdit(selected)">编辑资料</button>
           </section>
           <dl class="detail-grid">
             <div><dt>手机号</dt><dd>{{ selected.phone }}</dd></div><div><dt>性别</dt><dd>{{ selected.gender || '—' }}</dd></div>
-            <div><dt>生日</dt><dd>{{ formatDate(selected.birthday) }}</dd></div><div><dt>创建时间</dt><dd>{{ formatDateTime(selected.createTime) }}</dd></div>
-            <div><dt>会员标签</dt><dd>{{ selected.memberTag || '—' }}</dd></div><div><dt>会员类型</dt><dd>普通会员</dd></div>
+            <div><dt>会员等级</dt><dd>{{ selected.levelName || '普通会员' }}</dd></div><div><dt>注册时间</dt><dd>{{ formatDateTime(selected.registerTime) }}</dd></div>
+            <div><dt>状态</dt><dd>{{ selected.status || '—' }}</dd></div><div><dt>会员类型</dt><dd>{{ selected.levelName || '普通会员' }}</dd></div>
             <div><dt>累计消费</dt><dd>{{ formatMoney(selected.totalAmount) }}</dd></div>
             <div><dt>可用积分</dt><dd>{{ Number(selected.points || 0).toLocaleString() }}</dd></div>
           </dl>
@@ -147,8 +147,8 @@ import type { SaleOrder } from '../../types/sale'
 
 interface MemberForm extends Required<Pick<MemberDto, 'memberName' | 'phone'>> {
   gender: '男' | '女' | '未知'
-  birthday: string
-  memberTag: string
+  levelName: string
+  status: string
 }
 
 const members = ref<Member[]>([])
@@ -166,7 +166,7 @@ const orderTotal = ref(0)
 const formRef = ref<FormInstance>()
 const query = reactive<MemberQuery>({ page: 1, size: 10, keyword: '', status: '' })
 const orderQuery = reactive({ page: 1, size: 8 })
-const emptyForm = (): MemberForm => ({ memberName: '', phone: '', gender: '未知', birthday: '', memberTag: '' })
+const emptyForm = (): MemberForm => ({ memberName: '', phone: '', gender: '未知', levelName: '普通会员', status: '启用' })
 const form = reactive<MemberForm>(emptyForm())
 
 const rules: FormRules<MemberForm> = {
@@ -186,10 +186,6 @@ function maskPhone(phone?: string | null) {
 
 function formatMoney(value?: number | null) {
   return `¥ ${Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
-
-function formatDate(value?: string | null) {
-  return value ? value.slice(0, 10) : '—'
 }
 
 function formatDateTime(value?: string | null) {
@@ -238,8 +234,8 @@ async function openEdit(member: Member) {
       memberName: detail.memberName,
       phone: detail.phone,
       gender: detail.gender || '未知',
-      birthday: formatDate(detail.birthday) === '—' ? '' : formatDate(detail.birthday),
-      memberTag: detail.memberTag || '',
+      levelName: detail.levelName || '普通会员',
+      status: detail.status || '启用',
     })
     formVisible.value = true
   } finally {
@@ -252,8 +248,8 @@ function buildPayload(): MemberDto {
     memberName: form.memberName,
     phone: form.phone,
     gender: form.gender,
-    birthday: form.birthday || null,
-    memberTag: form.memberTag || null,
+    levelName: form.levelName,
+    status: form.status,
   }
 }
 

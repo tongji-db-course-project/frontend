@@ -1,15 +1,20 @@
 import request from '../utils/request'
-import type { PageResult } from '../types/common'
-import type { DateRangeQuery, DailySettlement, InventoryStatistics, ProductRankResult, ProfitStatistics } from '../types/statistics'
+import type {
+  DateRangeQuery,
+  DailySalesStatistics,
+  InventoryStatistics,
+  ProductRankItem,
+  ProfitStatistics,
+} from '../types/statistics'
 
 export const statisticsApi = {
-  getDailySettlements(params: DateRangeQuery & { page?: number; size?: number }) {
-    return request.get<unknown, PageResult<DailySettlement>>('/daily-settlements', { params })
+  getDailySales(params: DateRangeQuery) {
+    return request.get<unknown, DailySalesStatistics[]>('/statistics/sales/daily', { params })
   },
-  getProductRanking(params: DateRangeQuery & { limit?: number }) {
-    return request.get<unknown, ProductRankResult>('/statistics/products', { params })
+  getProductRanking(params: DateRangeQuery) {
+    return request.get<unknown, ProductRankItem[]>('/statistics/products/rank', { params })
   },
-  getProfit(params: DateRangeQuery & { groupBy?: 'day' | 'week' | 'month' }) {
+  getProfit(params: DateRangeQuery) {
     return request.get<unknown, ProfitStatistics>('/statistics/profit', { params })
   },
   getInventory() {
