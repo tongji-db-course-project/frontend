@@ -4,12 +4,12 @@ export interface Member {
   memberId: number
   memberName: string
   phone: string
-  gender?: '男' | '女' | '未知' | null
-  birthday?: string | null
+  gender?: string | null
+  levelName?: string | null
   points?: number | null
-  memberTag?: string | null
   totalAmount?: number | null
-  createTime?: string | null
+  registerTime?: string | null
+  status?: string | null
 }
 
 export interface MemberQuery extends PageQuery {}
@@ -17,7 +17,7 @@ export interface MemberQuery extends PageQuery {}
 export interface MemberDto {
   memberName: string
   phone: string
-  gender?: '男' | '女' | '未知'
-  birthday?: string | null
-  memberTag?: string | null
+  gender?: string
+  levelName?: string
+  status?: string
 }

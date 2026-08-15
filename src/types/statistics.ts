@@ -3,21 +3,22 @@ export interface DateRangeQuery {
   endDate?: string
 }
 
-export interface DailySettlement {
-  settlementId: number
-  settlementDate: string
-  totalSales: number
-  cashAmount: number
-  wechatAmount: number
-  alipayAmount: number
-  promotionDiscount: number
-  memberDiscount: number
-  couponDeduct: number
-  pointDeduct: number
-  pointConsumed: number
+export interface SalesStatistics {
+  statDate: string
   orderCount: number
-  status: '已生成' | '已确认' | string
-  createTime?: string | null
+  totalAmount: number
+  paidAmount: number
+  refundAmount: number
+  netAmount: number
+}
+
+export interface MonthlySalesStatistics {
+  month: string
+  orderCount: number
+  totalAmount: number
+  paidAmount: number
+  refundAmount: number
+  netAmount: number
 }
 
 export interface ProductRankItem {
@@ -25,36 +26,25 @@ export interface ProductRankItem {
   productName: string
   saleQuantity: number
   saleAmount: number
-  grossProfit?: number
-  rank: number
-}
-
-export interface ProductRankResult {
-  quantityRanking: ProductRankItem[]
-  amountRanking: ProductRankItem[]
-}
-
-export interface ProfitTrendItem {
-  date: string
-  salesAmount: number
-  costAmount: number
-  grossProfit: number
 }
 
 export interface ProfitStatistics {
-  totalSales: number
-  totalCost: number
+  totalSaleAmount: number
+  totalPurchaseCost: number
   grossProfit: number
-  grossMargin: number
-  trend: ProfitTrendItem[]
+  grossProfitRate: number
 }
 
 export interface InventoryStatistics {
-  totalProducts: number
-  warningProducts: number
-  outOfStockProducts: number
-  totalStockValue?: number
-  warehouseDistribution: Array<{ name: string; value: number }>
-  categoryDistribution: Array<{ name: string; value: number }>
-  warningRanking: Array<{ productName: string; currentStock: number; stockWarning: number }>
+  productCount: number
+  totalStock: number
+  warningProductCount: number
+  warehouseCount: number
+}
+
+export interface MemberStatistics {
+  memberCount: number
+  activeMemberCount: number
+  memberSaleAmount: number
+  averageSaleAmount: number
 }

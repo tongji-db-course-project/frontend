@@ -14,11 +14,11 @@
         <button class="query" @click="search">查询</button><button @click="reset">重置</button><span>共 {{ total }} 件商品</span>
       </div>
       <div class="table-wrap"><table><thead><tr><th>商品信息</th><th>商品编号</th><th>销售价</th><th>当前库存</th><th>创建时间</th><th>状态</th><th>操作</th></tr></thead>
-        <tbody><tr v-for="item in products" :key="item.id">
-          <td><div class="item-info"><i>{{ item.name.slice(0,1) }}</i><div><b>{{ item.name }}</b></div></div></td>
-          <td><code>#{{ item.id }}</code></td><td><b>¥ {{ item.price.toFixed(2) }}</b></td><td>{{ item.stock }}</td><td>{{ item.createTime }}</td>
-          <td><span class="status" :class="{off:item.status==='off_shelf'}"><i />{{ statusLabel(item.status) }}</span></td>
-          <td class="actions"><button @click="openDetail(item)">详情</button><button @click="openForm(item)">编辑</button><button class="danger" @click="toggle(item)">{{ item.status==='on_sale'?'下架':'上架' }}</button></td>
+        <tbody><tr v-for="item in products" :key="item.productId">
+          <td><div class="item-info"><i>{{ item.productName.slice(0,1) }}</i><div><b>{{ item.productName }}</b></div></div></td>
+          <td><code>#{{ item.productId }}</code></td><td><b>¥ {{ item.salePrice?.toFixed(2) }}</b></td><td>{{ item.currentStock }}</td>
+          <td><span class="status" :class="{off:item.status==='停售'}"><i />{{ item.status }}</span></td>
+          <td class="actions"><button @click="openDetail(item)">详情</button><button @click="openForm(item)">编辑</button><button class="danger" @click="toggle(item)">{{ item.status==='在售'?'下架':'上架' }}</button></td>
         </tr></tbody></table></div>
       <div v-if="!loading && products.length===0" class="empty-state">暂无商品数据</div>
       <footer><span>第 {{ page }} 页，每页 {{ size }} 条</span><div><button :disabled="page<=1" @click="changePage(page-1)">‹</button><button class="active">{{ page }}</button><button :disabled="page*size>=total" @click="changePage(page+1)">›</button></div></footer>
@@ -48,24 +48,24 @@ const categories=[{id:1,name:'饮料酒水'},{id:2,name:'休闲零食'},{id:3,na
 const suppliers=[{id:1,name:'华东食品供应链'},{id:2,name:'城市生鲜配送'}]
 const products=ref<ProductListItem[]>([])
 const keyword=ref(''),status=ref(''),formVisible=ref(false),detailVisible=ref(false)
-const editingId=ref<number|null>(null),selected=ref<Product|null>(null)
-const loading=ref(false),saving=ref(false),detailLoading=ref(false),warningTotal=ref(0),total=ref(0),page=ref(1),size=ref(3)
-const empty=():ProductPayload=>({productName:'',barcode:'',categoryId:1,supplierId:1,specification:'',purchasePrice:0,salePrice:0,stockWarning:10,unit:'件',status:'正常'})
+const editingId=ref<number|null>(null),selected=ref<ProductListItem|null>(null)
+const loading=ref(false),saving=ref(false),detailLoading=ref(false),warningTotal=ref(0),total=ref(0),page=ref(1),size=ref(10)
+const empty=():ProductPayload=>({productName:'',barcode:'',categoryId:1,supplierId:1,specification:'',purchasePrice:0,salePrice:0,stockWarning:10,unit:'件',status:'在售'})
 const form=reactive(empty())
-const enabledCount=computed(()=>products.value.filter(x=>x.status==='on_sale').length)
+const enabledCount=computed(()=>products.value.filter(x=>x.status==='在售').length)
 const categoryName=(id:number)=>categories.find(x=>x.id===id)?.name||`分类 #${id}`
 const supplierName=(id:number)=>suppliers.find(x=>x.id===id)?.name||`供应商 #${id}`
-const statusLabel=(value:string)=>value==='on_sale'?'在售':value==='off_shelf'?'下架':value
+const statusLabel=(value:string)=>value||'-'
 
 async function loadProducts(){loading.value=true;try{const result=await productApi.getList({page:page.value,size:size.value,keyword:keyword.value||undefined,status:status.value||undefined});products.value=result?.list||[];total.value=result?.total||0;page.value=result?.page||page.value;size.value=result?.size||size.value}catch{products.value=[];total.value=0}finally{loading.value=false}}
 async function loadWarningTotal(){try{const result=await productApi.getWarningStock({page:1,size:1});warningTotal.value=result?.total||0}catch{warningTotal.value=0}}
 async function search(){page.value=1;loadProducts()}
 function reset(){keyword.value='';status.value='';page.value=1;loadProducts()}
 function changePage(next:number){page.value=next;loadProducts()}
-async function openForm(item:ProductListItem|null=null){editingId.value=item?.id||null;Object.assign(form,item?await productApi.getDetail(item.id):empty());formVisible.value=true}
+async function openForm(item:ProductListItem|null=null){editingId.value=item?.productId||null;Object.assign(form,item?await productApi.getDetail(item.productId):empty());formVisible.value=true}
 async function save(){if(!form.productName||!form.barcode){ElMessage.warning('请填写商品名称和条码');return}saving.value=true;try{if(editingId.value)await productApi.update(editingId.value,{...form});else await productApi.create({...form});ElMessage.success(editingId.value?'商品修改成功':'商品新增成功');formVisible.value=false;await loadProducts()}finally{saving.value=false}}
-async function toggle(item:ProductListItem){if(item.status==='on_sale'){await ElMessageBox.confirm('下架后该商品将不可继续销售，确认下架吗？','下架商品',{type:'warning'});await productApi.remove(item.id);ElMessage.success('商品已下架')}else{const detail=await productApi.getDetail(item.id);await productApi.update(item.id,{...detail,status:'on_sale'});ElMessage.success('商品已上架')}await loadProducts()}
-async function openDetail(item:ProductListItem){selected.value=null;detailVisible.value=true;detailLoading.value=true;try{selected.value=await productApi.getDetail(item.id)}finally{detailLoading.value=false}}
+async function toggle(item:ProductListItem){if(item.status==='在售'){await ElMessageBox.confirm('下架后该商品将不可继续销售，确认下架吗？','下架商品',{type:'warning'});await productApi.remove(item.productId);ElMessage.success('商品已下架')}else{const detail=await productApi.getDetail(item.productId);await productApi.update(item.productId,{...detail,status:'在售'});ElMessage.success('商品已上架')}await loadProducts()}
+async function openDetail(item:ProductListItem){selected.value=null;detailVisible.value=true;detailLoading.value=true;try{selected.value=await productApi.getDetail(item.productId)}finally{detailLoading.value=false}}
 
 onMounted(()=>{loadProducts();loadWarningTotal()})
 </script>

@@ -12,9 +12,6 @@ export const saleApi = {
   create(data: SaleCheckoutPayload) {
     return request.post<unknown, SaleOrder>('/sales', data)
   },
-  checkout(data: SaleCheckoutPayload) {
-    return request.post<unknown, SaleOrder>('/sales/checkout', data)
-  },
   cancel(saleId: number, data: SaleCancelPayload) {
     return request.post<unknown, OrderStatusResult>(`/sales/${saleId}/cancel`, data)
   },
