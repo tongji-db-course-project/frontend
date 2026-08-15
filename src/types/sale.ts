@@ -28,6 +28,11 @@ export interface SaleDetailItem {
   quantity: number
 }
 
+export interface SaleCheckoutDetail {
+  productId: number
+  quantity: number
+}
+
 export interface SaleQuery extends PageQuery {
   memberId?: number
   startDate?: string

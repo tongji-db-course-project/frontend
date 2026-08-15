@@ -3,6 +3,7 @@ import type {
   DateRangeQuery,
   DailySalesStatistics,
   InventoryStatistics,
+  MemberStatistics,
   ProductRankItem,
   ProfitStatistics,
 } from '../types/statistics'
