@@ -46,9 +46,10 @@ request.interceptors.response.use(
     ElMessage.error(message)
 
     if (status === 401) {
-      // 可以在这里处理清除 token 并跳转登录页
       localStorage.removeItem('token')
-      // window.location.href = '/login'
+      if (window.location.pathname !== '/login') {
+        window.location.assign('/login')
+      }
     }
 
     return Promise.reject(error)

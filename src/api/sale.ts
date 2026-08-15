@@ -1,6 +1,6 @@
 import request from '../utils/request'
 import type { PageResult } from '../types/common'
-import type { OrderStatusResult, SaleCancelPayload, SaleCheckoutPayload, SaleOrder, SaleQuery } from '../types/sale'
+import type { SaleCheckoutPayload, SaleOrder, SaleQuery } from '../types/sale'
 
 export const saleApi = {
   getList(params: SaleQuery) {
@@ -12,7 +12,7 @@ export const saleApi = {
   create(data: SaleCheckoutPayload) {
     return request.post<unknown, SaleOrder>('/sales', data)
   },
-  cancel(saleId: number, data: SaleCancelPayload) {
-    return request.post<unknown, OrderStatusResult>(`/sales/${saleId}/cancel`, data)
+  checkout(data: SaleCheckoutPayload) {
+    return request.post<unknown, SaleOrder>('/sales', data)
   },
 }

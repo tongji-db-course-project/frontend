@@ -21,6 +21,15 @@ export interface MonthlySalesStatistics {
   netAmount: number
 }
 
+export interface DailySalesStatistics {
+  statDate: string
+  orderCount: number
+  totalAmount: number
+  paidAmount: number
+  refundAmount: number
+  netAmount: number
+}
+
 export interface ProductRankItem {
   productId: number
   productName: string
@@ -40,11 +49,4 @@ export interface InventoryStatistics {
   totalStock: number
   warningProductCount: number
   warehouseCount: number
-}
-
-export interface MemberStatistics {
-  memberCount: number
-  activeMemberCount: number
-  memberSaleAmount: number
-  averageSaleAmount: number
 }

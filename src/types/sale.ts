@@ -25,14 +25,6 @@ export interface SaleOrder {
 
 export interface SaleDetailItem {
   productId: number
-  productName: string
-  quantity: number
-  salePrice: number
-  subtotal: number
-}
-
-export interface SaleCheckoutDetail {
-  productId: number
   quantity: number
 }
 
@@ -46,19 +38,6 @@ export interface SaleCheckoutPayload {
   memberId?: number | null
   warehouseId: number
   payType: PayType
-  redeemPoints?: number
+  redeemPoints: number
   items: SaleCheckoutDetail[]
-}
-
-export interface SaleCancelPayload {
-  operatorId: number
-  reason: string
-}
-
-export interface OrderStatusResult {
-  orderId: number
-  orderCode: string
-  status: string
-  operatorId?: number | null
-  changeTime: string
 }

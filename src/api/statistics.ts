@@ -1,14 +1,17 @@
 import request from '../utils/request'
-import type { DateRangeQuery, SalesStatistics, MonthlySalesStatistics, ProductRankItem, ProfitStatistics, InventoryStatistics, MemberStatistics } from '../types/statistics'
+import type {
+  DateRangeQuery,
+  DailySalesStatistics,
+  InventoryStatistics,
+  ProductRankItem,
+  ProfitStatistics,
+} from '../types/statistics'
 
 export const statisticsApi = {
   getDailySales(params: DateRangeQuery) {
-    return request.get<unknown, SalesStatistics[]>('/statistics/sales/daily', { params })
+    return request.get<unknown, DailySalesStatistics[]>('/statistics/sales/daily', { params })
   },
-  getMonthlySales(params: DateRangeQuery) {
-    return request.get<unknown, MonthlySalesStatistics[]>('/statistics/sales/monthly', { params })
-  },
-  getProductRank(params: DateRangeQuery) {
+  getProductRanking(params: DateRangeQuery) {
     return request.get<unknown, ProductRankItem[]>('/statistics/products/rank', { params })
   },
   getProfit(params: DateRangeQuery) {
