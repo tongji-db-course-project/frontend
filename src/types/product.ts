@@ -29,6 +29,8 @@ export interface Product {
   stockWarning: number
   unit: string
   status: string
+  isPromotion?: string
+  promotionPrice?: number | null
 }
 
 export type ProductPayload = Omit<Product, 'productId'>

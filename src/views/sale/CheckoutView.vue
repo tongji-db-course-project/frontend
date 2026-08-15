@@ -111,7 +111,7 @@ async function checkout() {
   if (!cart.value.length) return
   submitting.value = true
   try {
-    lastSale.value = await saleApi.checkout({
+    lastSale.value = await saleApi.create({
       memberId: member.value?.memberId,
       warehouseId: warehouseId.value,
       payType: payType.value,

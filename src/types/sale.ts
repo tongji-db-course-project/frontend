@@ -7,7 +7,9 @@ export interface SaleOrder {
   saleId: number
   saleNo: string
   memberId?: number | null
+  memberName?: string | null
   userId: number
+  cashierName?: string | null
   saleDate?: string | null
   totalAmount?: number | null
   discountAmount?: number | null
@@ -16,15 +18,20 @@ export interface SaleOrder {
   status?: SaleStatus | null
   createTime?: string | null
   updateTime?: string | null
+  redeemedPoints?: number
+  earnedPoints?: number
+  items?: SaleDetailItem[]
 }
 
-export interface SaleCheckoutDetail {
+export interface SaleDetailItem {
   productId: number
   quantity: number
 }
 
 export interface SaleQuery extends PageQuery {
   memberId?: number
+  startDate?: string
+  endDate?: string
 }
 
 export interface SaleCheckoutPayload {

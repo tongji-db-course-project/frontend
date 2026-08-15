@@ -3,21 +3,22 @@ export interface DateRangeQuery {
   endDate?: string
 }
 
-export interface DailySettlement {
-  settlementId: number
-  settlementDate: string
-  totalSales: number
-  cashAmount: number
-  wechatAmount: number
-  alipayAmount: number
-  promotionDiscount: number
-  memberDiscount: number
-  couponDeduct: number
-  pointDeduct: number
-  pointConsumed: number
+export interface SalesStatistics {
+  statDate: string
   orderCount: number
-  status: '已生成' | '已确认' | string
-  createTime?: string | null
+  totalAmount: number
+  paidAmount: number
+  refundAmount: number
+  netAmount: number
+}
+
+export interface MonthlySalesStatistics {
+  month: string
+  orderCount: number
+  totalAmount: number
+  paidAmount: number
+  refundAmount: number
+  netAmount: number
 }
 
 export interface DailySalesStatistics {

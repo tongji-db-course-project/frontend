@@ -20,4 +20,7 @@ export const statisticsApi = {
   getInventory() {
     return request.get<unknown, InventoryStatistics>('/statistics/inventory')
   },
+  getMemberStatistics(params?: DateRangeQuery) {
+    return request.get<unknown, MemberStatistics>('/statistics/members', { params })
+  },
 }
