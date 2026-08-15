@@ -1,7 +1,6 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
-
 const baseURL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api').replace(/\/$/, '')
 
 const request = axios.create({
@@ -9,63 +8,51 @@ const request = axios.create({
   timeout: 10000,
 })
 
-request.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token')
-
-    if (token) {
-      config.headers = config.headers || {}
-      config.headers.Authorization = `Bearer ${token}`
-    }
-
-    return config
-  },
-  (error) => Promise.reject(error)
-)
-
-const getErrorMessage = (statusCode: number | undefined, businessCode: number | undefined, serverMessage?: string) => {
-  if (businessCode === 400) return serverMessage || '请求参数错误'
-  if (businessCode === 401) return '未登录或登录状态失效'
-  if (businessCode === 403) return '无权限访问该资源'
-  if (businessCode === 500) return '服务器内部错误'
-  if (statusCode === 401) return '未登录或登录状态失效'
-  if (statusCode === 403) return '无权限访问该资源'
-  if (statusCode === 500) return '服务器内部错误'
-  if (statusCode === 408) return '请求超时，请稍后重试'
-  return '请求失败，请稍后重试'
+// 状态码对应表
+const codeMessage: Record<number, string> = {
+  400: '请求参数错误',
+  401: '未登录或登录状态失效',
+  403: '无权限访问',
+  404: '资源不存在',
+  500: '服务器内部错误',
 }
+
+request.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
 
 request.interceptors.response.use(
   (response) => {
-    //HTTP成功
-    if (response.status >= 200 && response.status < 300) {
-      const res = response.data
+    const res = response.data
+    if (res.code === 200) {
+      return res.data //直接返回数据部分
+    }
+    
+    //处理业务型错误
+    const msg = res.message || '操作失败'
+    ElMessage.error(msg)
+    return Promise.reject(new Error(msg))
+  },
+  (error) => {
+    //处理非2xx的HTTP状态码
+    const status = error.response?.status
+    const serverMessage = error.response?.data?.message 
+    const message = serverMessage || codeMessage[status] || '网络请求异常'
 
-      //业务成功
-      if (res?.code === 200) {
-        return res?.data ?? null
+    ElMessage.error(message)
+
+    if (status === 401) {
+      localStorage.removeItem('token')
+      if (window.location.pathname !== '/login') {
+        window.location.assign('/login')
       }
-
-      //业务错误
-      const message = getErrorMessage(response.status, res?.code, res?.message)
-      ElMessage.error(message)
-      const err = { code: res?.code, message, data: res?.data ?? null, _handled: true }
-      return Promise.reject(err)
     }
 
-    //HTTP失败
-    const message = getErrorMessage(response.status, response.data?.code, response.data?.message)
-    ElMessage.error(message)
-    const err = Object.assign(new Error(message), { _handled: true })
-    return Promise.reject(err)
-  },
-  //网络错误
-  (error) => {
-    const status = error.response?.status
-    const message = getErrorMessage(status, error.response?.data?.code, error.response?.data?.message)
-    ElMessage.error(message)
-    const err = Object.assign(error, { _handled: true, message })
-    return Promise.reject(err)
+    return Promise.reject(error)
   }
 )
 

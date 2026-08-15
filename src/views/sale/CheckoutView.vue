@@ -1,3 +1,129 @@
-<template><div class="checkout"><header><div><p>销售管理 · POS 工作台</p><h1>POS 收银</h1></div><span><i />收银台在线</span></header><div class="layout"><section class="catalog card"><div class="search"><Search /><input v-model="keyword" placeholder="扫描条码或搜索商品名称" autofocus><kbd>Enter</kbd></div><nav><button v-for="c in categories" :key="c" :class="{active:category===c}" @click="category=c">{{ c }}</button></nav><div class="products"><button v-for="p in filtered" :key="p.id" @click="add(p)"><span>{{ p.name.slice(0,1) }}</span><b>{{ p.name }}</b><small>{{ p.spec }} · 库存 {{ p.stock }}</small><strong>¥ {{ p.price.toFixed(2) }}</strong></button></div></section><aside class="cart card"><header><div><h2>当前订单</h2><small>共 {{ totalQty }} 件商品</small></div><button @click="cart=[]">清空</button></header><div class="member"><User /><div><b>选择会员</b><small>识别会员并累计积分</small></div><button>绑定</button></div><div class="lines"><article v-for="line in cart" :key="line.id"><div><b>{{ line.name }}</b><small>¥ {{ line.price.toFixed(2) }}</small></div><el-input-number v-model="line.qty" :min="1" size="small"/><strong>¥ {{ (line.price*line.qty).toFixed(2) }}</strong><button @click="remove(line.id)">×</button></article><div v-if="!cart.length" class="empty">请从左侧选择商品</div></div><dl><div><dt>商品金额</dt><dd>¥ {{ subtotal.toFixed(2) }}</dd></div><div><dt>优惠金额</dt><dd class="discount">- ¥ {{ discount.toFixed(2) }}</dd></div><div class="total"><dt>应收金额</dt><dd>¥ {{ payable.toFixed(2) }}</dd></div></dl><div class="payments"><button v-for="p in payments" :key="p" :class="{active:payment===p}" @click="payment=p">{{ p }}</button></div><button class="settle" :disabled="!cart.length" @click="settle">确认收款 ¥ {{ payable.toFixed(2) }}</button></aside></div></div></template>
-<script setup lang="ts">import { computed, ref } from 'vue';import { ElMessage } from 'element-plus';import { Search,User } from '@element-plus/icons-vue';type Product={id:number;name:string;spec:string;price:number;stock:number;category:string};type Line=Product&{qty:number};const keyword=ref(''),category=ref('全部商品'),payment=ref('微信'),cart=ref<Line[]>([]);const categories=['全部商品','饮料酒水','休闲零食','乳品烘焙'];const payments=['现金','微信','支付宝','银行卡'];const products:Product[]=[{id:1,name:'可口可乐',spec:'500ml',price:3.5,stock:286,category:'饮料酒水'},{id:2,name:'天然矿泉水',spec:'550ml',price:2,stock:18,category:'饮料酒水'},{id:3,name:'原味薯片',spec:'70g',price:6.5,stock:86,category:'休闲零食'},{id:4,name:'全麦面包',spec:'400g',price:12.5,stock:42,category:'乳品烘焙'},{id:5,name:'纯牛奶',spec:'250ml',price:4,stock:0,category:'乳品烘焙'},{id:6,name:'混合坚果',spec:'120g',price:19.9,stock:68,category:'休闲零食'}];const filtered=computed(()=>products.filter(p=>(category.value==='全部商品'||p.category===category.value)&&(!keyword.value||p.name.includes(keyword.value))));const totalQty=computed(()=>cart.value.reduce((n,x)=>n+x.qty,0));const subtotal=computed(()=>cart.value.reduce((n,x)=>n+x.price*x.qty,0));const discount=computed(()=>subtotal.value>=100?8:0);const payable=computed(()=>subtotal.value-discount.value);function add(p:Product){if(!p.stock)return ElMessage.warning('该商品库存不足');const line=cart.value.find(x=>x.id===p.id);if(line)line.qty++;else cart.value.push({...p,qty:1})}function remove(id:number){cart.value=cart.value.filter(x=>x.id!==id)}function settle(){ElMessage.success(`已通过${payment.value}收款 ¥ ${payable.value.toFixed(2)}`);cart.value=[]}</script>
-<style scoped>.checkout{color:#29384f}.checkout>header{margin:3px 2px 14px;display:flex;justify-content:space-between;align-items:flex-end}.checkout header p{margin:0;color:#98a4b6;font-size:12px}.checkout h1{margin:3px 0 0;font-size:24px}.checkout>header>span{color:#169c73;font-size:11px}.checkout>header i{display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:#20bd87}.layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(340px,.8fr);gap:12px}.card{border:1px solid #e6ebf2;border-radius:8px;background:#fff}.catalog{padding:15px}.search{height:40px;padding:0 12px;display:flex;align-items:center;gap:9px;border:1px solid #dce4ee;border-radius:7px}.search svg{width:16px}.search input{flex:1;border:0}.search kbd{padding:2px 7px;color:#8d99aa;border:1px solid #dce4ee;border-radius:4px;background:#f7f9fc}.catalog nav{margin:13px 0;display:flex;gap:7px}.catalog nav button{padding:7px 11px;color:#718096;border:1px solid #e1e7ef;border-radius:6px;background:#fff}.catalog nav button.active{color:#1677ff;border-color:#b9d7ff;background:#edf5ff}.products{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.products>button{padding:13px;display:grid;text-align:left;border:1px solid #e7ecf2;border-radius:8px;background:#fff}.products>button:hover{border-color:#8dbfff;box-shadow:0 5px 16px rgba(22,119,255,.08)}.products>button>span{width:34px;height:34px;display:grid;place-items:center;color:#1677ff;border-radius:8px;background:#eaf3ff}.products b{margin-top:10px}.products small{margin:3px 0 10px;color:#98a4b6}.products strong{color:#1677ff}.cart{padding:15px;display:flex;flex-direction:column}.cart>header{display:flex;justify-content:space-between}.cart h2{margin:0;font-size:16px}.cart header small{color:#98a4b6}.cart header button,.member button{color:#1677ff;border:0;background:transparent}.member{margin:14px 0;padding:11px;display:flex;align-items:center;gap:9px;border-radius:7px;background:#f5f8fc}.member svg{width:20px}.member div{flex:1;display:grid}.member small{color:#98a4b6}.lines{min-height:210px;max-height:310px;overflow:auto}.lines article{padding:10px 0;display:grid;grid-template-columns:1fr 90px 75px 20px;align-items:center;gap:7px;border-bottom:1px solid #edf1f5}.lines article div{display:grid}.lines article small{color:#98a4b6}.lines article>button{border:0;background:transparent}.empty{padding:70px 0;text-align:center;color:#a1abb8}.cart dl{display:grid;gap:8px}.cart dl div{display:flex;justify-content:space-between}.cart dt{color:#7f8b9c}.cart dd{margin:0}.cart .discount{color:#e55358}.cart .total{padding-top:10px;border-top:1px solid #e6ebf2;font-size:16px;font-weight:700}.cart .total dd{color:#1677ff}.payments{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.payments button{height:34px;border:1px solid #e0e6ee;border-radius:6px;background:#fff}.payments button.active{color:#1677ff;border-color:#8dbfff;background:#edf5ff}.settle{height:44px;margin-top:10px;color:#fff;border:0;border-radius:7px;background:#1677ff}.settle:disabled{opacity:.5}@media(max-width:1050px){.layout{grid-template-columns:1fr}.products{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.products{grid-template-columns:1fr}.catalog nav{flex-wrap:wrap}}</style>
+<template>
+  <div class="biz-page checkout-page">
+    <PageHeader eyebrow="销售管理 · 门店收银" title="POS 收银" description="扫描条码或搜索商品，将商品加入购物车后完成结算" />
+    <div class="checkout-grid">
+      <section class="biz-card product-panel">
+        <div class="checkout-search">
+          <el-input v-model="productKeyword" size="large" placeholder="扫描条码或输入商品名称" :prefix-icon="Search" clearable @keyup.enter="searchProducts" />
+          <el-button size="large" type="primary" :loading="productLoading" @click="searchProducts">搜索</el-button>
+        </div>
+        <el-table v-loading="productLoading" :data="products" row-key="productId" class="biz-table">
+          <el-table-column label="商品" min-width="200">
+            <template #default="{ row }"><div class="biz-product"><span class="biz-product__avatar">{{ row.productName.slice(0, 1) }}</span><div><b>{{ row.productName }}</b><small>{{ row.barcode || '-' }} · {{ row.specification || '暂无规格' }}</small></div></div></template>
+          </el-table-column>
+          <el-table-column label="售价" width="105" align="right">
+            <template #default="{ row }"><strong>{{ formatMoney(effectivePrice(row)) }}</strong></template>
+          </el-table-column>
+          <el-table-column label="操作" width="95" align="center"><template #default="{ row }"><el-button type="primary" link @click="addToCart(row)">加入</el-button></template></el-table-column>
+        </el-table>
+        <el-empty v-if="!productLoading && !products.length" description="输入商品名称或条码开始查询" :image-size="80" />
+      </section>
+
+      <section class="biz-card cart-panel">
+        <header><div><h3><ShoppingCart />购物车</h3><small>{{ cart.length }} 种商品 / {{ cartQuantity }} 件</small></div><el-button link type="danger" :disabled="!cart.length" @click="clearCart">清空</el-button></header>
+        <div class="cart-list">
+          <article v-for="item in cart" :key="item.product.productId"><div><b>{{ item.product.productName }}</b><small>{{ formatMoney(effectivePrice(item.product)) }} / {{ item.product.unit || '件' }}</small></div><el-input-number v-model="item.quantity" :min="1" :max="999" size="small" /><strong>{{ formatMoney(effectivePrice(item.product) * item.quantity) }}</strong><el-button circle text type="danger" :icon="Delete" @click="removeFromCart(item.product.productId)" /></article>
+          <el-empty v-if="!cart.length" description="购物车为空" :image-size="80" />
+        </div>
+        <div class="member-box">
+          <el-input v-model="memberPhone" placeholder="输入会员手机号" clearable><template #append><el-button :icon="Search" :loading="memberLoading" @click="findMember" /></template></el-input>
+          <p v-if="member"><el-tag type="success">普通会员</el-tag><b>{{ member.memberName }}</b><span>{{ member.phone }} · {{ member.points ?? 0 }} 积分</span><el-button link type="danger" @click="removeMember">移除</el-button></p>
+        </div>
+        <div class="checkout-options">
+          <label>支付方式</label><el-radio-group v-model="payType"><el-radio-button value="现金">现金</el-radio-button><el-radio-button value="微信">微信</el-radio-button><el-radio-button value="支付宝">支付宝</el-radio-button></el-radio-group>
+          <label>出库仓库</label><el-input-number v-model="warehouseId" :min="1" :precision="0" controls-position="right" />
+          <label>兑换积分</label><el-input-number v-model="redeemPoints" :min="0" :max="member?.points ?? 0" :precision="0" :disabled="!member" />
+        </div>
+        <el-alert title="商品价格、库存扣减、积分兑换和最终实付金额由后端结算。" type="info" :closable="false" show-icon />
+        <dl class="checkout-total"><div><dt>商品金额</dt><dd>{{ formatMoney(totalAmount) }}</dd></div><div class="grand"><dt>预计金额</dt><dd>{{ formatMoney(totalAmount) }}</dd></div></dl>
+        <el-button size="large" type="primary" :loading="submitting" :disabled="!cart.length" @click="checkout">确认收款</el-button>
+      </section>
+    </div>
+    <el-result v-if="lastSale" icon="success" title="收款成功" :sub-title="`销售单号：${lastSale.saleNo}`"><template #extra><el-button @click="lastSale = null">继续收银</el-button><el-button type="primary" @click="router.push(`/sales/${lastSale.saleId}`)">查看销售单</el-button></template></el-result>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import { Delete, Search, ShoppingCart } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
+import PageHeader from '../../components/PageHeader.vue'
+import { productApi } from '../../api/product'
+import { memberApi } from '../../api/member'
+import { saleApi } from '../../api/sale'
+import type { ProductListItem } from '../../types/product'
+import type { Member } from '../../types/member'
+import type { PayType, SaleOrder } from '../../types/sale'
+import { formatMoney } from '../../utils/format'
+
+type CheckoutProduct = ProductListItem
+interface CartItem { product: CheckoutProduct; quantity: number }
+
+const router = useRouter()
+const productKeyword = ref('')
+const products = ref<CheckoutProduct[]>([])
+const productLoading = ref(false)
+const cart = ref<CartItem[]>([])
+const memberPhone = ref('')
+const member = ref<Member | null>(null)
+const memberLoading = ref(false)
+const payType = ref<PayType>('微信')
+const warehouseId = ref(1)
+const redeemPoints = ref(0)
+const submitting = ref(false)
+const lastSale = ref<SaleOrder | null>(null)
+
+const effectivePrice = (product: CheckoutProduct) => Number(product.salePrice || 0)
+const cartQuantity = computed(() => cart.value.reduce((sum, item) => sum + item.quantity, 0))
+const totalAmount = computed(() => cart.value.reduce((sum, item) => sum + effectivePrice(item.product) * item.quantity, 0))
+
+async function searchProducts() {
+  const keyword = productKeyword.value.trim()
+  if (!keyword) return
+  productLoading.value = true
+  try {
+    const result = await productApi.getList({ page: 1, size: 20, keyword, status: '在售' })
+    products.value = result?.list ?? []
+  } catch { products.value = [] } finally { productLoading.value = false }
+}
+
+function addToCart(product: CheckoutProduct) {
+  const current = cart.value.find(item => item.product.productId === product.productId)
+  if (current) current.quantity += 1
+  else cart.value.push({ product, quantity: 1 })
+  ElMessage.success(`${product.productName} 已加入购物车`)
+}
+
+function removeFromCart(productId: number) { cart.value = cart.value.filter(item => item.product.productId !== productId) }
+async function clearCart() { await ElMessageBox.confirm('确认清空购物车吗？', '清空购物车', { type: 'warning' }); cart.value = [] }
+function removeMember() { member.value = null; redeemPoints.value = 0 }
+
+async function findMember() {
+  if (!memberPhone.value.trim()) return
+  memberLoading.value = true
+  try { member.value = await memberApi.getByPhone(memberPhone.value.trim()); redeemPoints.value = 0 }
+  catch { removeMember() }
+  finally { memberLoading.value = false }
+}
+
+async function checkout() {
+  if (!cart.value.length) return
+  submitting.value = true
+  try {
+    lastSale.value = await saleApi.create({
+      memberId: member.value?.memberId,
+      warehouseId: warehouseId.value,
+      payType: payType.value,
+      redeemPoints: redeemPoints.value,
+      items: cart.value.map(item => ({ productId: item.product.productId, quantity: item.quantity })),
+    })
+    cart.value = []; member.value = null; memberPhone.value = ''; redeemPoints.value = 0
+    ElMessage.success('收款成功')
+  } finally { submitting.value = false }
+}
+</script>
+
+<style scoped>
+.checkout-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(380px,.65fr);gap:14px}.checkout-search{display:flex;gap:9px;margin-bottom:12px}.original-price{display:block;color:#a0a8b5;text-decoration:line-through}.cart-panel>header{display:flex;justify-content:space-between;align-items:center}.cart-panel h3{margin:0;display:flex;align-items:center;gap:7px}.cart-panel h3 svg{width:17px}.cart-panel header small{color:#98a4b6}.cart-list{min-height:220px;max-height:340px;overflow:auto;margin:12px 0;border-block:1px solid #edf1f5}.cart-list article{padding:11px 0;display:grid;grid-template-columns:minmax(110px,1fr) 105px 90px 32px;align-items:center;gap:8px;border-bottom:1px solid #edf1f5}.cart-list article>div{display:grid}.cart-list small{color:#98a4b6;font-size:10px}.member-box{padding:12px;border-radius:7px;background:#f7f9fc}.member-box p{margin:9px 0 0;display:flex;align-items:center;gap:8px}.member-box p span{color:#7d899a;font-size:11px}.member-box p .el-button{margin-left:auto}.checkout-options{padding:14px 0;display:grid;grid-template-columns:90px 1fr;align-items:center;gap:10px}.checkout-total{margin:14px 0}.checkout-total div{display:flex;justify-content:space-between;padding:6px 0}.checkout-total dt{color:#7d899a}.checkout-total dd{margin:0}.checkout-total .grand{padding-top:11px;border-top:1px dashed #dfe5ed;font-size:18px;font-weight:700}.cart-panel>.el-button{width:100%}@media(max-width:1150px){.checkout-grid{grid-template-columns:1fr}.cart-panel{min-width:0}}@media(max-width:600px){.cart-list article{grid-template-columns:1fr 100px}.cart-list article>strong{grid-column:1}.checkout-options{grid-template-columns:1fr}}
+</style>

@@ -1,1 +1,39 @@
-<template><RecordDetailPage title="销售单 XS202608070018" eyebrow="销售管理 · 销售单详情" status="已完成" :summary="summary" :details="details" :timeline="timeline" :done-steps="3" :items="items" /></template><script setup lang="ts">import RecordDetailPage from '../../components/RecordDetailPage.vue';const summary=[{label:'商品金额',value:'¥ 176.50'},{label:'优惠金额',value:'- ¥ 8.00'},{label:'实收金额',value:'¥ 168.50'},{label:'获得积分',value:'168'}];const details=[{label:'会员',value:'陈女士 / 138****5208'},{label:'收银员',value:'林晓'},{label:'支付方式',value:'微信支付'},{label:'交易时间',value:'2026-08-07 10:28'}];const timeline=['订单已创建','支付成功','交易完成'];const items=[{name:'可口可乐',spec:'500ml',quantity:2,price:3.5},{name:'全麦面包',spec:'400g',quantity:2,price:12.5},{name:'原味酸奶',spec:'200g',quantity:2,price:8.8}]</script>
+<template>
+  <div class="biz-page">
+    <PageHeader eyebrow="销售管理 · 订单详情" :title="detail?.saleNo || '销售单详情'" description="查看订单金额、支付信息与商品明细">
+      <el-button :icon="ArrowLeft" @click="router.push('/sales')">返回列表</el-button>
+    </PageHeader>
+    <div v-loading="loading">
+      <template v-if="detail">
+        <section class="biz-stats">
+          <StatCard label="原始金额" :value="formatMoney(detail.totalAmount)" :icon="Wallet" />
+          <StatCard label="优惠金额" :value="formatMoney(detail.discountAmount)" :icon="Discount" tone="orange" />
+          <StatCard label="实付金额" :value="formatMoney(detail.paidAmount)" :icon="Money" tone="green" />
+          <StatCard label="订单状态" :value="detail.status || '-'" :icon="CircleCheckFilled" tone="purple" />
+        </section>
+        <section class="biz-card">
+          <h3>订单信息</h3>
+          <dl class="biz-detail-grid"><div><dt>销售单号</dt><dd>{{ detail.saleNo }}</dd></div><div><dt>销售时间</dt><dd>{{ formatDateTime(detail.saleDate) }}</dd></div><div><dt>会员</dt><dd>{{ detail.memberId ? `会员 #${detail.memberId}` : '散客' }}</dd></div><div><dt>收银员</dt><dd>用户 #{{ detail.userId }}</dd></div><div><dt>支付方式</dt><dd>{{ detail.payType || '-' }}</dd></div><div><dt>创建时间</dt><dd>{{ formatDateTime(detail.createTime) }}</dd></div><div><dt>最后更新</dt><dd>{{ formatDateTime(detail.updateTime) }}</dd></div></dl>
+          <div class="biz-summary-row"><span>优惠<strong>-{{ formatMoney(detail.discountAmount) }}</strong></span><span>实付<strong>{{ formatMoney(detail.paidAmount) }}</strong></span></div>
+        </section>
+      </template>
+      <el-empty v-else description="未找到销售单" />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { ArrowLeft, CircleCheckFilled, Discount, Money, Wallet } from '@element-plus/icons-vue'
+import { useRoute, useRouter } from 'vue-router'
+import PageHeader from '../../components/PageHeader.vue'
+import StatCard from '../../components/StatCard.vue'
+import { saleApi } from '../../api/sale'
+import type { SaleOrder } from '../../types/sale'
+import { formatDateTime, formatMoney } from '../../utils/format'
+
+const route = useRoute(), router = useRouter(), saleId = Number(route.params.id)
+const detail = ref<SaleOrder | null>(null), loading = ref(false)
+async function load() { if (!Number.isFinite(saleId)) return; loading.value = true; try { detail.value = await saleApi.getDetail(saleId) } catch { detail.value = null } finally { loading.value = false } }
+onMounted(load)
+</script>

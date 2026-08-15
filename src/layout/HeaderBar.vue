@@ -58,12 +58,20 @@ const titles = {
   '/statistics/sales': '销售统计',
   '/statistics/products': '商品排行',
   '/statistics/profit': '毛利分析',
+  '/statistics/inventory': '库存分析',
+  '/points/records': '积分记录',
   '/system/users': '会员管理',
   '/system/roles': '角色管理',
   '/system/menus': '菜单管理',
 }
 
-const currentTitle = computed(() => titles[route.path] || '业务工作台')
+const currentTitle = computed(() => {
+  if (route.meta.title) return String(route.meta.title)
+  if (titles[route.path]) return titles[route.path]
+  if (/^\/sales\/\d+$/.test(route.path)) return '销售单详情'
+  if (/^\/returns\/\d+$/.test(route.path)) return '退货单详情'
+  return '业务工作台'
+})
 
 const handleLogout = () => {
   authStore.logout()

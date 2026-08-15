@@ -1,5 +1,53 @@
-<template><OperationsListPage title="当前库存" eyebrow="库存管理 · 实时库存" primary-label="库存调整" :metrics="metrics" :columns="columns" :rows="rows" :statuses="['正常','库存预警','缺货']" :form-fields="['商品条码','调整数量','调整原因']" search-placeholder="搜索商品名称、条码" /></template>
-<script setup lang="ts">import OperationsListPage from '../../components/OperationsListPage.vue'
-const metrics=[{label:'库存商品',value:'2,486',note:'覆盖 5 个分类'},{label:'库存总量',value:'86,420',note:'较昨日增加 1,260'},{label:'库存预警',value:'28',note:'建议及时补货'},{label:'缺货商品',value:'6',note:'影响正常销售'}]
-const columns=[{key:'barcode',label:'商品条码'},{key:'name',label:'商品名称',emphasis:true},{key:'warehouse',label:'仓库'},{key:'stock',label:'当前库存'},{key:'available',label:'可用库存'},{key:'warning',label:'预警值'},{key:'updatedAt',label:'更新时间'},{key:'status',label:'状态'}]
-const rows=[{id:1,barcode:'6928804011142',name:'可口可乐 500ml',warehouse:'中心仓',stock:286,available:280,warning:30,updatedAt:'2026-08-07 10:20',status:'正常'},{id:2,barcode:'6900000000102',name:'天然矿泉水 550ml',warehouse:'中心仓',stock:18,available:18,warning:30,updatedAt:'2026-08-07 09:48',status:'库存预警'},{id:3,barcode:'6900000000103',name:'纯牛奶 250ml',warehouse:'门店仓',stock:0,available:0,warning:15,updatedAt:'2026-08-07 08:32',status:'缺货'}]</script>
+<template>
+  <div class="biz-page">
+    <PageHeader eyebrow="库存管理 · 实时库存" title="当前库存" description="按商品和仓库查询库存，及时处理库存预警" />
+    <section class="biz-stats">
+      <StatCard label="库存记录" :value="total" :icon="Box" />
+      <StatCard label="本页库存总量" :value="stockTotal" :icon="GoodsFilled" tone="green" />
+      <StatCard label="本页预警" :value="warningCount" :icon="WarningFilled" tone="orange" />
+      <StatCard label="本页缺货" :value="outOfStockCount" :icon="CircleCloseFilled" tone="red" />
+    </section>
+    <section class="biz-card">
+      <div class="biz-toolbar">
+        <el-input v-model="query.keyword" placeholder="商品名称或条码" clearable :prefix-icon="Search" @keyup.enter="search" />
+        <el-select v-model="query.warehouseId" placeholder="全部仓库" clearable><el-option v-for="item in warehouses" :key="item.warehouseId" :label="item.warehouseName" :value="item.warehouseId" /></el-select>
+        <el-checkbox v-model="query.warningOnly">只看库存预警</el-checkbox>
+        <el-button type="primary" @click="search">查询</el-button><el-button @click="reset">重置</el-button>
+        <span class="biz-toolbar__summary">共 {{ total }} 条库存记录</span>
+      </div>
+      <el-table v-loading="loading" :data="items" row-key="inventoryId" stripe border class="biz-table">
+        <el-table-column label="商品信息" min-width="220"><template #default="{ row }"><div class="biz-product"><span class="biz-product__avatar">{{ (row.productName || '商').slice(0,1) }}</span><div><b>{{ row.productName || `商品 #${row.productId}` }}</b><small>{{ row.barcode || '-' }} · {{ row.specification || '规格未提供' }}</small></div></div></template></el-table-column>
+        <el-table-column label="仓库" min-width="150"><template #default="{ row }">{{ row.warehouseName || `仓库 #${row.warehouseId}` }}</template></el-table-column>
+        <el-table-column label="当前库存" width="125" align="right"><template #default="{ row }"><strong :class="statusOf(row) === '缺货' ? 'biz-negative' : ''">{{ formatQuantity(row.currentStock, row.unit || '') }}</strong></template></el-table-column>
+        <el-table-column label="预警值" width="110" align="right"><template #default="{ row }">{{ row.stockWarning == null ? '-' : formatQuantity(row.stockWarning, row.unit || '') }}</template></el-table-column>
+        <el-table-column label="库存状态" width="100" align="center"><template #default="{ row }"><span class="biz-status" :class="statusTone(statusOf(row))">{{ statusOf(row) }}</span></template></el-table-column>
+        <el-table-column label="最后更新" width="170"><template #default="{ row }">{{ formatDateTime(row.lastUpdateTime) }}</template></el-table-column>
+      </el-table>
+      <div class="biz-pagination"><el-pagination background layout="total, sizes, prev, pager, next, jumper" :total="total" v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10,20,50]" @change="load" /></div>
+    </section>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, reactive, ref } from 'vue'
+import { Box, CircleCloseFilled, GoodsFilled, Search, WarningFilled } from '@element-plus/icons-vue'
+import PageHeader from '../../components/PageHeader.vue'
+import StatCard from '../../components/StatCard.vue'
+import { inventoryApi } from '../../api/inventory'
+import type { InventoryItem, InventoryQuery, InventoryStatus, Warehouse } from '../../types/inventory'
+import { formatDateTime, formatQuantity } from '../../utils/format'
+
+const items = ref<InventoryItem[]>([]), warehouses = ref<Warehouse[]>([])
+const loading = ref(false), total = ref(0)
+const query = reactive<InventoryQuery>({ page: 1, size: 10, keyword: '', warehouseId: undefined, warningOnly: false })
+const statusOf = (item: InventoryItem): InventoryStatus => item.currentStock <= 0 ? '缺货' : item.stockWarning != null && item.currentStock <= item.stockWarning ? '预警' : '正常'
+const statusTone = (status: InventoryStatus) => status === '正常' ? 'green' : status === '预警' ? 'orange' : 'red'
+const stockTotal = computed(() => items.value.reduce((sum, item) => sum + item.currentStock, 0))
+const warningCount = computed(() => items.value.filter(item => statusOf(item) === '预警').length)
+const outOfStockCount = computed(() => items.value.filter(item => statusOf(item) === '缺货').length)
+async function load() { loading.value = true; try { const params = { ...query, keyword: query.keyword || undefined, warehouseId: query.warehouseId || undefined }; const result = query.warningOnly ? await inventoryApi.getWarningList(params) : await inventoryApi.getList(params); items.value = result?.list ?? []; total.value = result?.total ?? 0 } catch { items.value = []; total.value = 0 } finally { loading.value = false } }
+async function loadWarehouses() { try { warehouses.value = await inventoryApi.getWarehouses() ?? [] } catch { warehouses.value = [] } }
+function search() { query.page = 1; load() }
+function reset() { Object.assign(query, { page: 1, size: 10, keyword: '', warehouseId: undefined, warningOnly: false }); load() }
+onMounted(() => { load(); loadWarehouses() })
+</script>
