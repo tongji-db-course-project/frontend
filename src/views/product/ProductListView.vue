@@ -1,6 +1,6 @@
 <template>
   <div class="data-page">
-    <header class="page-head"><div><p>基础资料 · 商品档案</p><h1>商品管理</h1></div><span class="read-only-tip">当前后端支持商品查询</span></header>
+    <header class="page-head"><div><p>基础资料 · 商品档案</p><h1>商品管理</h1></div><el-button type="primary" :icon="Plus" @click="openForm()">新增商品</el-button></header>
     <section class="stats">
       <article><span class="blue"><Goods /></span><div><small>商品总数</small><strong>{{ total }}</strong></div></article>
       <article><span class="green"><CircleCheckFilled /></span><div><small>本页正常销售</small><strong>{{ enabledCount }}</strong></div></article>
@@ -13,26 +13,64 @@
         <select v-model="status"><option value="">全部状态</option><option value="在售">在售</option><option value="停售">停售</option></select>
         <button class="query" @click="search">查询</button><button @click="reset">重置</button><span>共 {{ total }} 件商品</span>
       </div>
-      <div class="table-wrap"><table><thead><tr><th>商品信息</th><th>商品编号</th><th>分类 / 供应商</th><th>销售价</th><th>当前库存</th><th>状态</th></tr></thead>
+      <div class="table-wrap"><table><thead><tr><th>商品信息</th><th>商品编号</th><th>分类 / 供应商</th><th>销售价</th><th>当前库存</th><th>状态</th><th>操作</th></tr></thead>
         <tbody><tr v-for="item in products" :key="item.productId">
           <td><div class="item-info"><i>{{ item.productName?.slice(0,1) || '?' }}</i><div><b>{{ item.productName }}</b><small>{{ item.barcode || '无条码' }} · {{ item.specification || '暂无规格' }}</small></div></div></td>
           <td><code>#{{ item.productId }}</code></td><td><b>{{ item.categoryName || `分类 #${item.categoryId}` }}</b><small class="block">{{ item.supplierName || `供应商 #${item.supplierId}` }}</small></td><td><b>¥ {{ Number(item.salePrice || 0).toFixed(2) }}</b></td><td>{{ item.currentStock }} {{ item.unit || '' }}</td>
           <td><span class="status" :class="{off:item.status!=='在售'}"><i />{{ item.status || '未知' }}</span></td>
+          <td class="actions"><button @click="openDetail(item)">查看</button><button @click="openForm(item)">编辑</button><button class="danger" @click="removeProduct(item)">删除</button></td>
         </tr></tbody></table></div>
       <div v-if="!loading && products.length===0" class="empty-state">暂无商品数据</div>
       <footer><span>第 {{ page }} 页，每页 {{ size }} 条</span><div><button :disabled="page<=1" @click="changePage(page-1)">‹</button><button class="active">{{ page }}</button><button :disabled="page*size>=total" @click="changePage(page+1)">›</button></div></footer>
     </section>
+
+    <el-dialog v-model="formVisible" :title="editingId ? '编辑商品' : '新增商品'" width="680px" destroy-on-close>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px" class="form-grid">
+        <el-form-item label="商品名称" prop="productName"><el-input v-model="form.productName" /></el-form-item>
+        <el-form-item label="商品条码" prop="barcode"><el-input v-model="form.barcode" /></el-form-item>
+        <el-form-item label="商品分类" prop="categoryId"><el-select v-model="form.categoryId" filterable><el-option v-for="item in categories" :key="item.categoryId" :label="item.categoryName" :value="item.categoryId" /></el-select></el-form-item>
+        <el-form-item label="供应商" prop="supplierId"><el-select v-model="form.supplierId" filterable><el-option v-for="item in suppliers" :key="item.supplierId" :label="item.supplierName" :value="item.supplierId" /></el-select></el-form-item>
+        <el-form-item label="规格"><el-input v-model="form.specification" /></el-form-item>
+        <el-form-item label="单位"><el-input v-model="form.unit" /></el-form-item>
+        <el-form-item label="采购价" prop="purchasePrice"><el-input-number v-model="form.purchasePrice" :min="0" :precision="2" /></el-form-item>
+        <el-form-item label="销售价" prop="salePrice"><el-input-number v-model="form.salePrice" :min="0" :precision="2" /></el-form-item>
+        <el-form-item label="库存预警"><el-input-number v-model="form.stockWarning" :min="0" :precision="0" /></el-form-item>
+        <el-form-item label="销售状态"><el-select v-model="form.status"><el-option label="在售" value="在售" /><el-option label="停售" value="停售" /></el-select></el-form-item>
+        <el-form-item label="促销商品"><el-switch v-model="promotionEnabled" /></el-form-item>
+        <el-form-item v-if="promotionEnabled" label="促销价"><el-input-number v-model="form.promotionPrice" :min="0" :precision="2" /></el-form-item>
+      </el-form>
+      <template #footer><el-button @click="formVisible=false">取消</el-button><el-button type="primary" :loading="saving" @click="saveProduct">保存</el-button></template>
+    </el-dialog>
+
+    <el-drawer v-model="detailVisible" title="商品详情" size="420px">
+      <div v-loading="detailLoading" class="detail" v-if="selected"><h2>{{ selected.productName }}</h2><p>#{{ selected.productId }} · {{ selected.barcode || '无条码' }}</p><dl>
+        <div><dt>分类</dt><dd>{{ categoryName(selected.categoryId) }}</dd></div><div><dt>供应商</dt><dd>{{ supplierName(selected.supplierId) }}</dd></div>
+        <div><dt>规格 / 单位</dt><dd>{{ selected.specification || '-' }} / {{ selected.unit || '-' }}</dd></div><div><dt>采购价</dt><dd>¥ {{ Number(selected.purchasePrice).toFixed(2) }}</dd></div>
+        <div><dt>销售价</dt><dd>¥ {{ Number(selected.salePrice).toFixed(2) }}</dd></div><div><dt>库存预警</dt><dd>{{ selected.stockWarning }}</dd></div><div><dt>状态</dt><dd>{{ selected.status }}</dd></div>
+      </dl></div>
+    </el-drawer>
   </div>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { CircleCheckFilled, Collection, Goods, Search, WarningFilled } from '@element-plus/icons-vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { CircleCheckFilled, Collection, Goods, Plus, Search, WarningFilled } from '@element-plus/icons-vue'
 import { productApi } from '../../api/product'
-import type { ProductListItem } from '../../types/product'
+import { categoryApi } from '../../api/category'
+import { supplierApi } from '../../api/supplier'
+import type { Product, ProductCategory, ProductListItem, ProductPayload } from '../../types/product'
+import type { Supplier } from '../../types/supplier'
 
 const products=ref<ProductListItem[]>([])
 const keyword=ref(''),status=ref('')
 const loading=ref(false),total=ref(0),page=ref(1),size=ref(10)
+const formVisible=ref(false),detailVisible=ref(false),saving=ref(false),detailLoading=ref(false)
+const editingId=ref<number|null>(null),selected=ref<Product|null>(null),formRef=ref<FormInstance>()
+const categories=ref<ProductCategory[]>([]),suppliers=ref<Supplier[]>([])
+const emptyForm=():ProductPayload=>({categoryId:0,supplierId:0,productName:'',barcode:'',specification:'',purchasePrice:0,salePrice:0,stockWarning:0,unit:'件',status:'在售',isPromotion:'否',promotionPrice:null})
+const form=reactive<ProductPayload>(emptyForm())
+const promotionEnabled=computed({get:()=>form.isPromotion==='是',set:value=>{form.isPromotion=value?'是':'否';if(!value)form.promotionPrice=null}})
+const rules:FormRules<ProductPayload>={productName:[{required:true,message:'请输入商品名称',trigger:'blur'}],barcode:[{required:true,message:'请输入商品条码',trigger:'blur'}],categoryId:[{required:true,type:'number',min:1,message:'请选择商品分类',trigger:'change'}],supplierId:[{required:true,type:'number',min:1,message:'请选择供应商',trigger:'change'}],purchasePrice:[{required:true,message:'请输入采购价',trigger:'change'}],salePrice:[{required:true,message:'请输入销售价',trigger:'change'}]}
 const enabledCount=computed(()=>products.value.filter(x=>x.status==='在售').length)
 const warningTotal=computed(()=>products.value.filter(x=>x.stockWarning != null && x.currentStock < x.stockWarning).length)
 const categoryCount=computed(()=>new Set(products.value.map(x=>x.categoryId)).size)
@@ -41,8 +79,15 @@ async function loadProducts(){loading.value=true;try{const result=await productA
 async function search(){page.value=1;loadProducts()}
 function reset(){keyword.value='';status.value='';page.value=1;loadProducts()}
 function changePage(next:number){page.value=next;loadProducts()}
+async function loadOptions(){const [categoryResult,supplierResult]=await Promise.all([categoryApi.getList({page:1,size:100,status:'启用'}),supplierApi.getList({page:1,size:100,status:'启用'})]);categories.value=categoryResult?.list||[];suppliers.value=supplierResult?.list||[]}
+async function openForm(item?:ProductListItem){editingId.value=item?.productId??null;Object.assign(form,emptyForm());if(item){saving.value=true;try{Object.assign(form,await productApi.getDetail(item.productId))}finally{saving.value=false}}formVisible.value=true}
+async function saveProduct(){if(!await formRef.value?.validate().catch(()=>false))return;saving.value=true;try{if(editingId.value)await productApi.update(editingId.value,{...form});else await productApi.create({...form});ElMessage.success(editingId.value?'商品已更新':'商品已新增');formVisible.value=false;await loadProducts()}finally{saving.value=false}}
+async function openDetail(item:ProductListItem){detailVisible.value=true;detailLoading.value=true;selected.value=null;try{selected.value=await productApi.getDetail(item.productId)}finally{detailLoading.value=false}}
+async function removeProduct(item:ProductListItem){await ElMessageBox.confirm(`确认删除商品“${item.productName}”吗？`,'删除商品',{type:'warning'});await productApi.remove(item.productId);ElMessage.success('商品已删除');await loadProducts()}
+const categoryName=(id:number)=>categories.value.find(x=>x.categoryId===id)?.categoryName||`分类 #${id}`
+const supplierName=(id:number)=>suppliers.value.find(x=>x.supplierId===id)?.supplierName||`供应商 #${id}`
 
-onMounted(loadProducts)
+onMounted(()=>Promise.all([loadProducts(),loadOptions()]))
 </script>
 <style scoped>
 .read-only-tip{padding:8px 12px;color:#1677ff;border-radius:6px;background:#eaf3ff;font-size:11px}

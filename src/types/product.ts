@@ -36,3 +36,20 @@ export interface Product {
 export type ProductPayload = Omit<Product, 'productId'>
 
 export type ProductQuery = PageQuery
+
+export type CategoryStatus = '启用' | '停用'
+
+export interface ProductCategory {
+  categoryId: number
+  categoryName: string
+  categoryDesc: string | null
+  status: CategoryStatus
+}
+
+export interface ProductCategoryPayload {
+  categoryName: string
+  categoryDesc: string
+  status: CategoryStatus
+}
+
+export type ProductCategoryQuery = PageQuery

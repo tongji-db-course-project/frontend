@@ -1,0 +1,1 @@
+<template><div class="reserved"><h1>商品档案编辑</h1><p>商品新增与编辑已整合至商品管理页面，此视图保留用于后续独立路由扩展。</p><RouterLink to="/product">返回商品管理</RouterLink></div></template><style scoped>.reserved{padding:48px;text-align:center;border:1px solid #e6ebf2;border-radius:8px;background:#fff}.reserved p{color:#8b97a8}.reserved a{color:#1677ff}</style>

@@ -50,3 +50,10 @@ export interface InventoryStatistics {
   warningProductCount: number
   warehouseCount: number
 }
+
+export interface MemberStatistics {
+  memberCount: number
+  activeMemberCount: number
+  memberSaleAmount: number
+  averageSaleAmount: number
+}
