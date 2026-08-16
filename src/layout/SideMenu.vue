@@ -70,10 +70,10 @@ const menuItems = [
     name: '基础资料', icon: Goods,
     children: [
       { name: '商品管理', path: '/product' },
-      { name: '商品分类', path: '/categories' },
       { name: '供应商管理', path: '/suppliers' },
     ],
   },
+  { name: '商品分类', path: '/categories', icon: List },
   { name: '会员管理', path: '/members', icon: User },
   {
     name: '采购管理', icon: Box,
