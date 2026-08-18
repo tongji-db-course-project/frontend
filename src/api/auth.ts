@@ -10,7 +10,7 @@ const mockPassword = import.meta.env.VITE_MOCK_PASSWORD || '123456'
 const mockToken = import.meta.env.VITE_MOCK_TOKEN || 'mock-token-dev'
 const mockUserId = Number(import.meta.env.VITE_MOCK_USER_ID || 1)
 const mockRealName = import.meta.env.VITE_MOCK_REAL_NAME || '演示用户'
-const mockRoleName = import.meta.env.VITE_MOCK_ROLE_NAME || '演示角色'
+const mockRoleName = import.meta.env.VITE_MOCK_ROLE_NAME || '管理员'
 
 export const authApi = {
   async login(data: LoginParams) {
