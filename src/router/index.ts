@@ -1,13 +1,11 @@
 import {createRouter,createWebHistory} from 'vue-router'
-import LoginView from '../views/login/LoginView.vue'
-import MainLayout from '../layout/MainLayout.vue'
 
 const router = createRouter({
     //使用浏览器历史记录模式
     history:createWebHistory(),
     routes:[
-        {path:'/login', name:'login',component:LoginView},
-        {path:'/',component:MainLayout,redirect:'/dashboard',children:[
+        {path:'/login', name:'login',component:()=>import('../views/login/LoginView.vue')},
+        {path:'/',component:()=>import('../layout/MainLayout.vue'),redirect:'/dashboard',children:[
             //工作台
             {path:'dashboard',component:()=>import('../views/dashboard/DashboardView.vue')},
             

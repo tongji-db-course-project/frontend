@@ -1,6 +1,16 @@
 import { defineStore } from 'pinia'
 import { authApi } from '../api/auth'
-import type { LoginParams } from '../types/auth'
+import type { LoginParams, LoginResponse } from '../types/auth'
+
+const loadSavedUser = (): LoginResponse | null => {
+  try {
+    const value = localStorage.getItem('userInfo')
+    return value ? JSON.parse(value) as LoginResponse : null
+  } catch {
+    localStorage.removeItem('userInfo')
+    return null
+  }
+}
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({

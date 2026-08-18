@@ -1,5 +1,6 @@
 <template>
-  <div class="purchase-page" v-if="detail">
+  <div class="purchase-page" v-loading="loading">
+    <template v-if="detail">
     <header class="page-head">
       <div>
         <p>首页 / 采购管理 / 采购单列表 / 采购单详情</p>
@@ -76,6 +77,8 @@
         </section>
       </aside>
     </div>
+    </template>
+    <el-empty v-else-if="!loading" description="未找到采购单"><el-button type="primary" @click="$router.push('/purchases')">返回列表</el-button></el-empty>
   </div>
 </template>
 

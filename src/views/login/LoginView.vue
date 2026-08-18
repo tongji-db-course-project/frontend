@@ -9,6 +9,11 @@
         </div>
         <h1>商品零食管理系统</h1>
         <p>统一管理商品、采购、销售、库存与统计数据</p>
+        <ul class="feature-list">
+          <li><span>✓</span>商品、库存与供应商统一管理</li>
+          <li><span>✓</span>采购、销售与退货全流程追踪</li>
+          <li><span>✓</span>经营数据实时汇总分析</li>
+        </ul>
       </div>
 
       <el-card class="login-card" shadow="never">
@@ -42,6 +47,9 @@
               type="password"
               placeholder="请输入密码"
               show-password
+              @keydown="detectCapsLock"
+              @keyup="detectCapsLock"
+              @blur="capsLockOn = false"
               @keyup.enter="handleLogin"
             >
               <template #prefix>
@@ -50,9 +58,12 @@
             </el-input>
           </el-form-item>
 
+          <p v-if="capsLockOn" class="form-notice warning" role="status">Caps Lock 已开启，请注意密码大小写</p>
+          <p v-if="submitError" class="form-notice error" role="alert">{{ submitError }}</p>
+
           <div class="extra-row">
-            <el-checkbox>记住我</el-checkbox>
-            <span class="forgot-link">忘记密码</span>
+            <el-checkbox v-model="rememberMe">记住账号</el-checkbox>
+            <button type="button" class="forgot-link" @click="handleForgotPassword">忘记密码</button>
           </div>
 
           <el-button
@@ -84,9 +95,13 @@ const router = useRouter()
 const authStore = useAuthStore()
 const loading = ref(false)
 const formRef=ref<FormInstance>()
+const rememberedUsername = localStorage.getItem('rememberedUsername') || ''
+const rememberMe = ref(Boolean(rememberedUsername))
+const capsLockOn = ref(false)
+const submitError = ref('')
 
 const loginForm = reactive<LoginParams>({
-  username: '',
+  username: rememberedUsername,
   password: ''
 })
 
@@ -102,6 +117,7 @@ const rules:FormRules={
 
 const handleLogin = async () => {
   if(!formRef.value) return
+  submitError.value = ''
 
   try{
     await formRef.value.validate()
@@ -113,18 +129,31 @@ const handleLogin = async () => {
   try {
     // 调用 Store 里的登录 Action
     await authStore.login(loginForm)
+    if (rememberMe.value) localStorage.setItem('rememberedUsername', loginForm.username)
+    else localStorage.removeItem('rememberedUsername')
     ElMessage.success('登录成功，正在跳转...')
     // 登录成功跳转到首页 (Dashboard)
     router.push('/dashboard')
   } catch (err: any) {
     if (!err?._handled) {
       const msg = err?.message || err?.response?.data?.message || '登录失败'
+      submitError.value = msg
       ElMessage.error(msg)
+    } else {
+      submitError.value = err?.message || '账号或密码不正确，请重新输入'
     }
     console.error('登录失败详情:', err)
   } finally {
     loading.value = false
   }
+}
+
+const handleForgotPassword = () => {
+  ElMessage.info('请联系系统管理员重置密码')
+}
+
+const detectCapsLock = (event: KeyboardEvent) => {
+  capsLockOn.value = event.getModifierState?.('CapsLock') ?? false
 }
 </script>
 
@@ -222,6 +251,19 @@ const handleLogin = async () => {
   max-width: 420px;
 }
 
+.feature-list {
+  margin: 28px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 13px;
+  color: #536b8c;
+  font-size: 14px;
+  list-style: none;
+}
+
+.feature-list li { display: flex; align-items: center; gap: 9px; }
+.feature-list span { width: 22px; height: 22px; display: grid; place-items: center; color: #1677ff; border-radius: 50%; background: rgba(22,119,255,.1); font-size: 12px; font-weight: 700; }
+
 .login-card {
   border-radius: 24px;
   padding:18px;
@@ -251,6 +293,17 @@ const handleLogin = async () => {
   margin-top:8px;
 }
 
+.form-notice {
+  margin: -9px 0 12px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.form-notice.warning { color: #9a6108; background: #fff7e6; }
+.form-notice.error { color: #b4232a; background: #fff1f1; }
+
 .extra-row{
   display:flex;
   justify-content: space-between;
@@ -261,9 +314,14 @@ const handleLogin = async () => {
 }
 
 .forgot-link{
+  padding: 4px 0;
   color:#409eff;
+  border: 0;
+  background: transparent;
   cursor:pointer;
 }
+
+.forgot-link:hover { color: #1677ff; text-decoration: underline; }
 
 .submit-btn {
   width: 100%;
@@ -320,8 +378,23 @@ const handleLogin = async () => {
   }
 
   .login-card{
+    width: 100%;
     max-width: 460px;
     margin:0 auto;
   }
+}
+
+@media(max-width:520px){
+  .login-wrapper { min-height: 100dvh; padding: 20px 14px; overflow-y: auto; }
+  .login-panel { gap: 0; }
+  .login-card { padding: 10px; border-radius: 18px; }
+  .title { margin-bottom: 22px; }
+  .title h2 { font-size: 24px; }
+  .submit-btn { height: 46px; }
+}
+
+@media(prefers-reduced-motion: reduce){
+  .login-wrapper { animation: none; }
+  .submit-btn, .forgot-link { transition: none; }
 }
 </style>

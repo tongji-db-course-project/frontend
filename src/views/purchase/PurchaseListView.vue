@@ -157,6 +157,7 @@ const getList = async () => {
     approvedCount.value = list.value.filter((x) => x.status === '已审批').length;
     stockInCount.value = list.value.filter((x) => x.status === '已入库').length;
   } catch (error) {
+    list.value = [];
     console.error('获取采购列表失败:', error);
   } finally {
     loading.value = false;

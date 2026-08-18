@@ -8,11 +8,11 @@
       </div>
     </div>
 
-    <div class="menu-search">
+    <label class="menu-search" aria-label="搜索菜单功能">
       <Search />
-      <span>搜索功能</span>
+      <input ref="searchInput" v-model.trim="searchKeyword" type="search" placeholder="搜索功能" />
       <kbd>/</kbd>
-    </div>
+    </label>
 
     <el-menu
       :default-active="route.path"
@@ -25,7 +25,7 @@
       unique-opened
       @select="$emit('navigate')"
     >
-      <template v-for="item in menuItems" :key="item.path || item.name">
+      <template v-for="item in filteredMenuItems" :key="item.path || item.name">
         <el-menu-item v-if="!item.children" :index="item.path">
           <el-icon><component :is="item.icon" /></el-icon>
           <span>{{ item.name }}</span>
@@ -42,18 +42,20 @@
         </el-sub-menu>
       </template>
     </el-menu>
+    <p v-if="searchKeyword && !filteredMenuItems.length" class="menu-empty">没有匹配的功能</p>
 
     <div class="sidebar-footer">
       <span class="status-dot" />
       <div>
-        <strong>服务运行正常</strong>
-        <small>最后更新 刚刚</small>
+        <strong>系统连接状态</strong>
+        <small>请以页面数据提示为准</small>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   Box, DataAnalysis, Goods, HomeFilled, List, Setting,
@@ -63,6 +65,8 @@ import {
 defineEmits(['navigate'])
 const route = useRoute()
 const openedMenus = ['数据中心']
+const searchKeyword = ref('')
+const searchInput = ref(null)
 
 const menuItems = [
   { name: '经营概览', path: '/dashboard', icon: HomeFilled },
@@ -114,6 +118,34 @@ const menuItems = [
     ],
   },
 ]
+
+const filteredMenuItems = computed(() => {
+  const keyword = searchKeyword.value.toLowerCase()
+  if (!keyword) return menuItems
+  return menuItems.flatMap(item => {
+    if (item.name.toLowerCase().includes(keyword)) return [item]
+    if (!item.children) return []
+    const children = item.children.filter(child => child.name.toLowerCase().includes(keyword))
+    return children.length ? [{ ...item, children }] : []
+  })
+})
+
+const focusSearch = () => searchInput.value?.focus()
+const handleShortcut = (event) => {
+  const target = event.target
+  if (event.key !== '/' || target?.matches?.('input, textarea, select, [contenteditable="true"]')) return
+  event.preventDefault()
+  focusSearch()
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleShortcut)
+  window.addEventListener('focus-menu-search', focusSearch)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleShortcut)
+  window.removeEventListener('focus-menu-search', focusSearch)
+})
 </script>
 
 <style scoped>
@@ -159,7 +191,7 @@ const menuItems = [
 
 .brand small {
   color: rgba(255,255,255,.62);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: .16em;
 }
 
@@ -179,7 +211,20 @@ const menuItems = [
 
 .menu-search svg {
   width: 14px;
+  flex: none;
 }
+
+.menu-search input {
+  min-width: 0;
+  width: 100%;
+  color: #fff;
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
+
+.menu-search input::placeholder { color: rgba(255,255,255,.62); }
+.menu-search input::-webkit-search-cancel-button { display: none; }
 
 .menu-search kbd {
   margin-left: auto;
@@ -189,6 +234,9 @@ const menuItems = [
   border-radius: 4px;
   background: transparent;
 }
+
+.menu-search:focus-within { border-color: rgba(255,255,255,.48); background: rgba(0,44,110,.22); }
+.menu-empty { margin: 22px 14px auto; color: rgba(255,255,255,.72); font-size: 12px; text-align: center; }
 
 .menu {
   flex: 1;
@@ -248,7 +296,7 @@ const menuItems = [
   display: grid;
 }
 
-.sidebar-footer strong { font-size: 11px; }
-.sidebar-footer small { color: rgba(255,255,255,.58); font-size: 10px; }
+.sidebar-footer strong { font-size: 12px; }
+.sidebar-footer small { color: rgba(255,255,255,.72); font-size: 11px; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #58e6a9; box-shadow: 0 0 0 4px rgba(88,230,169,.13); }
 </style>

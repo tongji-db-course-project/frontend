@@ -12,17 +12,17 @@
     </div>
 
     <div class="header-actions">
-      <button class="icon-button" aria-label="搜索"><Search /></button>
-      <button class="icon-button notification" aria-label="通知">
+      <button class="icon-button" aria-label="搜索功能" title="搜索功能（/）" @click="focusMenuSearch"><Search /></button>
+      <button class="icon-button notification" aria-label="通知" title="查看通知" @click="showNotifications">
         <Bell />
         <span />
       </button>
       <div class="divider" />
       <div class="profile">
-        <span class="avatar">管</span>
+        <span class="avatar">{{ avatarText }}</span>
         <div>
-          <strong>管理员</strong>
-          <small>系统管理员</small>
+          <strong>{{ displayName }}</strong>
+          <small>{{ roleName }}</small>
         </div>
       </div>
       <button class="logout-button" @click="handleLogout">退出</button>
@@ -34,6 +34,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Bell, Menu, Search } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { useAuthStore } from '../stores/auth'
 
 defineEmits(['toggle-menu'])
@@ -41,6 +42,11 @@ defineEmits(['toggle-menu'])
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const displayName = computed(() => authStore.userInfo?.realName || authStore.userInfo?.username || '当前用户')
+const roleName = computed(() => authStore.userInfo?.roleName || '已登录')
+const avatarText = computed(() => displayName.value.slice(0, 1))
+const focusMenuSearch = () => window.dispatchEvent(new Event('focus-menu-search'))
+const showNotifications = () => ElMessage.info('暂无新的系统通知')
 
 const titles = {
   '/dashboard': '经营概览',
@@ -87,8 +93,8 @@ const handleLogout = () => {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  background: #fff;
-  border-bottom: 1px solid #e8edf5;
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .header-left,
@@ -149,7 +155,7 @@ const handleLogout = () => {
 }
 
 .icon-button:hover {
-  color: #1677ff;
+  color: var(--color-primary);
   background: #f1f6ff;
 }
 
@@ -184,8 +190,8 @@ const handleLogout = () => {
 }
 
 .profile small {
-  color: #9aa5b5;
-  font-size: 11px;
+  color: #7f8da1;
+  font-size: 12px;
 }
 
 .avatar {
@@ -207,12 +213,22 @@ const handleLogout = () => {
 }
 
 .logout-button:hover {
-  color: #e5484d;
+  color: var(--color-danger);
   background: #fff2f2;
 }
 
 @media (max-width: 900px) {
   .menu-trigger { display: grid; place-items: center; }
   .breadcrumb span, .breadcrumb i, .profile > div, .divider, .icon-button:first-of-type { display: none; }
+}
+
+@media (max-width: 480px) {
+  .header-bar { height: 56px; padding: 0 10px; gap: 8px; }
+  .header-left, .header-actions { gap: 7px; }
+  .breadcrumb { font-size: 13px; }
+  .profile { gap: 0; }
+  .avatar { width: 32px; height: 32px; }
+  .logout-button { padding: 7px 5px; font-size: 12px; }
+  .icon-button { width: 32px; height: 32px; }
 }
 </style>

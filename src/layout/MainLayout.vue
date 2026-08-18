@@ -3,7 +3,7 @@
     <aside class="app-sidebar" :class="{ 'is-open': mobileMenuOpen }">
       <SideMenu @navigate="mobileMenuOpen = false" />
     </aside>
-    <div v-if="mobileMenuOpen" class="menu-mask" @click="mobileMenuOpen = false" />
+    <button v-if="mobileMenuOpen" class="menu-mask" aria-label="关闭导航菜单" @click="mobileMenuOpen = false" />
 
     <section class="app-workspace">
       <HeaderBar @toggle-menu="mobileMenuOpen = !mobileMenuOpen" />
@@ -15,18 +15,32 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import SideMenu from './SideMenu.vue'
 import HeaderBar from './HeaderBar.vue'
 
 const mobileMenuOpen = ref(false)
+
+watch(mobileMenuOpen, (open) => {
+  document.body.style.overflow = open ? 'hidden' : ''
+})
+
+const closeOnEscape = (event) => {
+  if (event.key === 'Escape') mobileMenuOpen.value = false
+}
+
+onMounted(() => window.addEventListener('keydown', closeOnEscape))
+onBeforeUnmount(() => {
+  document.body.style.overflow = ''
+  window.removeEventListener('keydown', closeOnEscape)
+})
 </script>
 
 <style scoped>
 .app-shell {
   min-height: 100vh;
   display: flex;
-  background: #f3f6fb;
+  background: var(--surface-page);
 }
 
 .app-sidebar {
@@ -44,8 +58,8 @@ const mobileMenuOpen = ref(false)
 
 .app-main {
   min-height: calc(100vh - 64px);
-  padding: 16px;
-  overflow: hidden;
+  padding: var(--space-page);
+  overflow-x: hidden;
 }
 
 .menu-mask {
@@ -54,6 +68,7 @@ const mobileMenuOpen = ref(false)
 
 @media (max-width: 900px) {
   .app-sidebar {
+    width: min(280px, 84vw);
     transform: translateX(-100%);
     transition: transform .24s ease;
   }
@@ -77,6 +92,12 @@ const mobileMenuOpen = ref(false)
     inset: 0;
     z-index: 20;
     background: rgba(13, 31, 58, .45);
+    border: 0;
+    border-radius: 0;
   }
+}
+
+@media (max-width: 480px) {
+  .app-main { padding: 10px; }
 }
 </style>
