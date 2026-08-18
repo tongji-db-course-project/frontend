@@ -5,6 +5,26 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  --text-primary: #27364b;
+  --text-secondary: #68778d;
+  --text-muted: #8793a5;
+  --color-primary: #1677ff;
+  --color-primary-hover: #0f6fe8;
+  --color-success: #16a67a;
+  --color-warning: #d47713;
+  --color-danger: #d8444a;
+  --surface-page: #f3f6fb;
+  --surface-card: #ffffff;
+  --surface-subtle: #f7f9fc;
+  --border-color: #e3e9f1;
+  --border-color-strong: #d8e0ea;
+  --radius-sm: 6px;
+  --radius-md: 9px;
+  --radius-lg: 16px;
+  --space-page: 16px;
+  --shadow-card: 0 8px 24px rgba(31, 68, 117, .06);
+  --shadow-float: 0 16px 40px rgba(31, 68, 117, .14);
+  --transition-fast: .16s ease;
 }
 
 * {
@@ -21,6 +41,9 @@ body,
 
 body {
   background: #f3f6fb;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 button,
@@ -32,7 +55,11 @@ textarea {
 
 button {
   cursor: pointer;
+  transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), transform .08s ease;
 }
+
+button:active:not(:disabled) { transform: translateY(1px); }
+button:disabled { cursor: not-allowed; }
 
 button,
 input,
@@ -63,5 +90,10 @@ select:focus-visible {
 
 ::selection {
   color: #fff;
-  background: #1677ff;
+  background: var(--color-primary);
 }
+
+.el-button { --el-button-border-radius: var(--radius-sm); }
+.el-card { --el-card-border-radius: var(--radius-md); }
+.el-dialog { --el-dialog-border-radius: var(--radius-lg); }
+.el-input, .el-select { --el-border-radius-base: var(--radius-sm); }

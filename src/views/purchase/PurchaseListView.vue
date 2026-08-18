@@ -89,15 +89,14 @@ const getList = async () => {
   loading.value = true;
   try {
     const res = await purchaseApi.getList(queryParams);
-    // 兼容取值逻辑，保障数据正常渲染
-    const dataList = res.data?.data?.list || res.data?.list || [];
-    list.value = dataList;
+    list.value = res?.list || [];
 
     // 更新统计数据
     draftCount.value = list.value.filter(x => x.status === '草稿').length;
     pendingCount.value = list.value.filter(x => x.status === '待审批').length;
     stockInCount.value = list.value.filter(x => x.status === '已入库').length;
   } catch (error) {
+    list.value = [];
     console.error('获取采购列表失败:', error);
   } finally {
     loading.value = false;

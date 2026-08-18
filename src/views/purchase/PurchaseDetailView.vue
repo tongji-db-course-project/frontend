@@ -1,5 +1,6 @@
 <template>
-  <div class="purchase-page" v-if="detail">
+  <div class="purchase-page" v-loading="loading">
+    <template v-if="detail">
     <header class="page-head">
       <div>
         <p>首页 / 采购管理 / 采购单列表 / 采购单详情</p>
@@ -28,7 +29,10 @@
           <div class="detail-actions">
             <el-button v-if="detail.status === '草稿'" type="primary" @click="$router.push(`/purchases/edit/${detail.orderId}`)">编辑</el-button>
             <el-button v-if="detail.status === '草稿'" type="warning" @click="submitApproval">提交审批</el-button>
-            <el-button type="danger" @click="deleteOrder">删除</el-button>
+            <el-button v-if="detail.status === '待审批'" type="success" @click="approveOrder">审批通过</el-button>
+            <el-button v-if="detail.status === '待审批'" type="danger" plain @click="rejectOrder">驳回</el-button>
+            <el-button v-if="detail.status === '已审批'" type="success" @click="stockInOrder">确认入库</el-button>
+            <el-button v-if="detail.status === '草稿'" type="danger" @click="deleteOrder">删除</el-button>
           </div>
         </section>
 
@@ -82,6 +86,8 @@
         </section>
       </aside>
     </div>
+    </template>
+    <el-empty v-else-if="!loading" description="未找到采购单"><el-button type="primary" @click="$router.push('/purchases')">返回列表</el-button></el-empty>
   </div>
 </template>
 
@@ -90,17 +96,32 @@ import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { purchaseApi } from '../../api/purchase';
 import type { PurchaseOrder } from '../../types/purchase';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 
 const route = useRoute();
 const detail = ref<PurchaseOrder | null>(null);
+const loading = ref(false);
+
+const loadDetail = async () => {
+  const id = Number(route.params.id);
+  if (!Number.isFinite(id)) return;
+  loading.value = true;
+  try { detail.value = await purchaseApi.getDetail(id); }
+  catch { detail.value = null; }
+  finally { loading.value = false; }
+};
+
+const runAction = async (message: string, action: () => Promise<unknown>) => {
+  await ElMessageBox.confirm(`确认${message}吗？`, message, { type: 'warning' });
+  await action();
+  ElMessage.success(`${message}成功`);
+  await loadDetail();
+};
 
 const submitApproval = async () => {
   if (!detail.value) return;
   try {
-    await purchaseApi.submit(detail.value.orderId);
-    detail.value = { ...detail.value, status: '待审批' };
-    ElMessage.success('提交审批成功');
+    await runAction('提交审批', () => purchaseApi.submit(detail.value!.orderId));
   } catch (error) {
     console.error(error);
   }
@@ -109,6 +130,7 @@ const submitApproval = async () => {
 const deleteOrder = async () => {
   if (!detail.value) return;
   try {
+    await ElMessageBox.confirm('删除后无法恢复，确认删除该采购单吗？', '删除采购单', { type: 'warning' });
     await purchaseApi.delete(detail.value.orderId);
     ElMessage.success('删除成功');
     history.back();
@@ -117,15 +139,11 @@ const deleteOrder = async () => {
   }
 };
 
-onMounted(async () => {
-  try {
-    const res = await purchaseApi.getDetail(Number(route.params.id));
-    // 兼容 Axios 响应与拦截器直接返回 data 的两种格式
-    detail.value = res.data?.data || res.data || null;
-  } catch (error) {
-    console.error('获取采购单详情失败:', error);
-  }
-});
+const approveOrder = async () => { if (detail.value) await runAction('审批通过', () => purchaseApi.approve(detail.value!.orderId)); };
+const rejectOrder = async () => { if (detail.value) await runAction('驳回采购单', () => purchaseApi.reject(detail.value!.orderId)); };
+const stockInOrder = async () => { if (detail.value) await runAction('确认入库', () => purchaseApi.inStock(detail.value!.orderId)); };
+
+onMounted(loadDetail);
 </script>
 
 <style scoped>

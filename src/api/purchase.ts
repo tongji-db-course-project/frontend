@@ -1,13 +1,12 @@
-import axios from 'axios';
+import request from '../utils/request';
 import type { 
   PurchaseOrder, 
   PurchaseQueryParams, 
   PurchaseFormDto, 
-  ApiResponse, 
   PageResult 
 } from '../types/purchase';
 
-const isMock = import.meta.env.VITE_USE_LOCAL_MOCK === 'true';
+const isMock = import.meta.env.VITE_USE_PURCHASE_LOCAL_MOCK === 'true';
 
 //模拟商品
 const PRODUCT_DICT: Record<number, string> = {
@@ -70,22 +69,11 @@ const MOCK_DB: PurchaseOrder[] = [
 ];
 
 //模拟响应辅助函数
-const mockResponse = <T>(data: T, code = 200, message = '成功'): Promise<any> => {
+const mockResponse = <T>(data: T): Promise<T> => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      const res = { data: { code, message: `[Mock] ${message}`, data } };
-      code >= 400 ? reject({ response: { status: code, data: res.data } }) : resolve(res);
+      data === undefined ? reject(new Error('未找到该采购单')) : resolve(data);
     }, 400);
-  });
-};
-
-//通用Axios响应校验辅助函数
-const handleResponse = <T>(promise: Promise<any>): Promise<ApiResponse<T>> => {
-  return promise.then(res => {
-    if (res.data && res.data.code !== 200) {
-      return Promise.reject(new Error(res.data.message || '请求处理失败'));
-    }
-    return res;
   });
 };
 
@@ -98,9 +86,12 @@ export const prApi = {
       if (params.keyword) {
         list = list.filter(i => i.orderCode.includes(params.keyword!) || (i.supplierName && i.supplierName.includes(params.keyword!)));
       }
-      return mockResponse<PageResult<PurchaseOrder>>({ list, total: list.length, page: 1, size: 10 });
+      const page = params.page || 1;
+      const size = params.size || 10;
+      const start = (page - 1) * size;
+      return mockResponse<PageResult<PurchaseOrder>>({ list: list.slice(start, start + size), total: list.length, page, size });
     }
-    return handleResponse<PageResult<PurchaseOrder>>(axios.get('/purchases', { params }));
+    return request.get<unknown, PageResult<PurchaseOrder>>('/purchases', { params });
   },
   
   create: (data: PurchaseFormDto) => {
@@ -123,15 +114,15 @@ export const prApi = {
       MOCK_DB.unshift(newOrder as any);
       return mockResponse(newOrder);
     }
-    return handleResponse<PurchaseOrder>(axios.post('/purchases', data));
+    return request.post<unknown, PurchaseOrder>('/purchases', data);
   },
 
   getDetail: (id: number) => {
     if (isMock) {
       const item = MOCK_DB.find(o => o.orderId === id);
-      return mockResponse(item);
+      return mockResponse(item as PurchaseOrder);
     }
-    return handleResponse<PurchaseOrder>(axios.get(`/purchases/${id}`));
+    return request.get<unknown, PurchaseOrder>(`/purchases/${id}`);
   },
 
   update: (id: number, data: PurchaseFormDto) => {
@@ -156,9 +147,9 @@ export const prApi = {
         };
         return mockResponse(MOCK_DB[index]);
       }
-      return mockResponse(null, 404, '未找到该采购单');
+      return Promise.reject(new Error('未找到该采购单'));
     }
-    return handleResponse<PurchaseOrder>(axios.put(`/purchases/${id}`, data));
+    return request.put<unknown, PurchaseOrder>(`/purchases/${id}`, data);
   },
 
   delete: (id: number) => {
@@ -167,7 +158,7 @@ export const prApi = {
       if (index !== -1) MOCK_DB.splice(index, 1);
       return mockResponse(null);
     }
-    return handleResponse<null>(axios.delete(`/purchases/${id}`));
+    return request.delete<unknown, null>(`/purchases/${id}`);
   },
 
   submit: (id: number) => {
@@ -176,17 +167,23 @@ export const prApi = {
        if(o) o.status = '待审批'; 
        return mockResponse(null); 
      }
-     return handleResponse<null>(axios.post(`/purchases/${id}/submit`));
+     return request.post<unknown, null>(`/purchases/${id}/submit`);
   },
 
-  approve: (id: number) => 
-    isMock ? mockResponse(null) : handleResponse<null>(axios.post(`/purchases/${id}/approve`)),
+  approve: (id: number) => {
+    if (isMock) { const order = MOCK_DB.find(item => item.orderId === id); if (order) order.status = '已审批'; return mockResponse(null); }
+    return request.post<unknown, null>(`/purchases/${id}/approve`);
+  },
 
-  reject: (id: number) => 
-    isMock ? mockResponse(null) : handleResponse<null>(axios.post(`/purchases/${id}/reject`)),
+  reject: (id: number) => {
+    if (isMock) { const order = MOCK_DB.find(item => item.orderId === id); if (order) order.status = '草稿'; return mockResponse(null); }
+    return request.post<unknown, null>(`/purchases/${id}/reject`);
+  },
 
-  inStock: (id: number) => 
-    isMock ? mockResponse(null) : handleResponse<null>(axios.post(`/purchases/${id}/stock-in`)),
+  inStock: (id: number) => {
+    if (isMock) { const order = MOCK_DB.find(item => item.orderId === id); if (order) order.status = '已入库'; return mockResponse(null); }
+    return request.post<unknown, null>(`/purchases/${id}/stock-in`);
+  },
 };
 
 export const poApi = prApi;

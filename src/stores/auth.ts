@@ -1,11 +1,21 @@
 import { defineStore } from 'pinia'
 import { authApi } from '../api/auth'
-import type { LoginParams } from '../types/auth'
+import type { LoginParams, LoginResponse } from '../types/auth'
+
+const loadSavedUser = (): LoginResponse | null => {
+  try {
+    const value = localStorage.getItem('userInfo')
+    return value ? JSON.parse(value) as LoginResponse : null
+  } catch {
+    localStorage.removeItem('userInfo')
+    return null
+  }
+}
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: localStorage.getItem('token') || '',
-    userInfo: null as any
+    userInfo: loadSavedUser()
   }),
   actions: {
     async login(params: LoginParams) {
@@ -22,11 +32,13 @@ export const useAuthStore = defineStore('auth', {
       this.userInfo = data
       // 持久化存储，防止刷新页面丢失
       localStorage.setItem('token', data.token)
+      localStorage.setItem('userInfo', JSON.stringify(data))
     },
     logout() {
       this.token = ''
       this.userInfo = null
       localStorage.removeItem('token')
+      localStorage.removeItem('userInfo')
     }
   }
 })

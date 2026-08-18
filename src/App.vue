@@ -13,6 +13,6 @@
 }
 
 body {
-  font-family: sans-serif;
+  font-family: inherit;
 }
 </style>

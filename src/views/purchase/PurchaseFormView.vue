@@ -105,7 +105,7 @@ const loadPurchase = async () => {
   if (!route.params.id) return;
   try {
     const res = await purchaseApi.getDetail(Number(route.params.id));
-    const data = (res.data?.data || res.data) as PurchaseOrder;
+    const data = res as PurchaseOrder;
     if (data) {
       form.supplierId = data.supplierId;
       form.supplierName = data.supplierName || '';
