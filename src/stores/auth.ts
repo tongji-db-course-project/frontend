@@ -5,7 +5,8 @@ import type { LoginParams } from '../types/auth'
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: localStorage.getItem('token') || '',
-    userInfo: null as any
+    userInfo: null as any,
+    roleName: localStorage.getItem('currentRoleName') || '管理员',
   }),
   actions: {
     async login(params: LoginParams) {
@@ -20,13 +21,17 @@ export const useAuthStore = defineStore('auth', {
       // 保存到 Store 状态中
       this.token = data.token
       this.userInfo = data
+      this.roleName = data.roleName || this.roleName
       // 持久化存储，防止刷新页面丢失
       localStorage.setItem('token', data.token)
+      localStorage.setItem('currentRoleName', this.roleName)
     },
     logout() {
       this.token = ''
       this.userInfo = null
+      this.roleName = '管理员'
       localStorage.removeItem('token')
+      localStorage.removeItem('currentRoleName')
     }
   }
 })
