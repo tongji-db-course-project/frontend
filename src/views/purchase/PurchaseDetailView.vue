@@ -93,6 +93,7 @@ import type { PurchaseOrder } from '../../types/purchase';
 const route = useRoute();
 const router = useRouter();
 const detail = ref<PurchaseOrder | null>(null);
+const loading = ref(false);
 const canApproveOrReject = computed(() => canApproveOrStockIn());
 const canStockIn = computed(() => canApproveOrStockIn());
 const canEditPurchase = (status?: string) => canEditPurchaseBeforeApproval(status);
@@ -183,6 +184,7 @@ const unwrapResponse = <T>(res: any): T | null => {
 };
 
 onMounted(async () => {
+  loading.value = true;
   try {
     const res = await purchaseApi.getDetail(Number(route.params.id));
     detail.value = unwrapResponse<PurchaseOrder>(res) || null;
@@ -192,6 +194,8 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('获取采购单详情失败:', error);
+  } finally {
+    loading.value = false;
   }
 });
 </script>
