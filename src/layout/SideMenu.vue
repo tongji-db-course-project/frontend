@@ -83,6 +83,7 @@ const menuItems = [
     name: '采购管理', icon: Box,
     children: [
       { name: '采购单列表', path: '/purchases' },
+      { name: '新建采购单', path: '/purchases/create' },
     ],
   },
   {

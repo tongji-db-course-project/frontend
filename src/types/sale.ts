@@ -25,7 +25,13 @@ export interface SaleOrder {
 
 export interface SaleDetailItem {
   productId: number
+  productName?: string | null
+  barcode?: string | null
+  specification?: string | null
+  unitPrice?: number | null
+  salePrice?: number | null
   quantity: number
+  subtotal?: number | null
 }
 
 export interface SaleCheckoutDetail {

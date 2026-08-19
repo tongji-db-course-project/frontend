@@ -15,7 +15,7 @@ const loadSavedUser = (): LoginResponse | null => {
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: localStorage.getItem('token') || '',
-    userInfo: null as any,
+    userInfo: loadSavedUser(),
     roleName: localStorage.getItem('currentRoleName') || '管理员',
   }),
   actions: {
@@ -34,6 +34,7 @@ export const useAuthStore = defineStore('auth', {
       this.roleName = data.roleName || this.roleName
       // 持久化存储，防止刷新页面丢失
       localStorage.setItem('token', data.token)
+      localStorage.setItem('userInfo', JSON.stringify(data))
       localStorage.setItem('currentRoleName', this.roleName)
     },
     logout() {
@@ -41,6 +42,7 @@ export const useAuthStore = defineStore('auth', {
       this.userInfo = null
       this.roleName = '管理员'
       localStorage.removeItem('token')
+      localStorage.removeItem('userInfo')
       localStorage.removeItem('currentRoleName')
     }
   }
