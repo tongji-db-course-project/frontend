@@ -25,4 +25,7 @@ dist-ssr
 
 
 # Environment files
-.env.development
+# .env 与 .env.development 为团队共享默认值（无敏感信息），随仓库提交。
+# 本地私有覆盖请使用 *.local，不提交。
+.env.local
+.env.*.local

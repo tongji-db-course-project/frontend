@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
-const baseURL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api').replace(/\/$/, '')
+const baseURL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
 
 const request = axios.create({
   baseURL,
