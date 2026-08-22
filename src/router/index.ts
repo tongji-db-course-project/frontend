@@ -10,8 +10,7 @@ const router = createRouter({
             {path:'dashboard',component:()=>import('../views/dashboard/DashboardView.vue')},
             
             //系统管理
-            // 旧地址保留兼容，统一跳转到独立的会员管理页面
-            {path:'system/users',redirect:'/members'},
+            {path:'system/users',component:()=>import('../views/system/UserListView.vue')},
             {path:'system/roles',component:()=>import('../views/system/RoleListView.vue')},
             {path:'system/menus',component:()=>import('../views/system/MenuListView.vue')},
 
@@ -64,6 +63,21 @@ router.beforeEach((to,_from,next)=>{
     if(token&&to.path==='/login'){
         next('/dashboard')
         return
+    }
+
+    // 前端可见性按功能点约束；真正的安全边界仍必须由后端鉴权保证。
+    if(token){
+        let roleName=''
+        try{ roleName=JSON.parse(localStorage.getItem('userInfo')||'{}').roleName||'' }catch{}
+        const allowedPrefixes:Record<string,string[]>={
+            '采购员':['/dashboard','/product','/sales','/members'],
+            '收银员':['/dashboard','/product','/purchases','/inventory'],
+        }
+        const allowed=allowedPrefixes[roleName]
+        if(allowed&&!allowed.some(prefix=>to.path===prefix||to.path.startsWith(`${prefix}/`))){
+            next('/dashboard')
+            return
+        }
     }
 
     //其他情况正常放行
