@@ -58,7 +58,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  Box, DataAnalysis, Goods, HomeFilled, List, Setting,
+  Box, Coin, DataAnalysis, Goods, HomeFilled, List, Setting,
   ShoppingCart, Search, User,
 } from '@element-plus/icons-vue'
 
@@ -73,17 +73,15 @@ const menuItems = [
   {
     name: '基础资料', icon: Goods,
     children: [
+      { name: '商品分类', path: '/categories' },
       { name: '商品管理', path: '/product' },
       { name: '供应商管理', path: '/suppliers' },
     ],
   },
-  { name: '商品分类', path: '/categories', icon: List },
-  { name: '会员管理', path: '/members', icon: User },
   {
     name: '采购管理', icon: Box,
     children: [
       { name: '采购单列表', path: '/purchases' },
-      { name: '新建采购单', path: '/purchases/create' },
     ],
   },
   {
@@ -91,7 +89,7 @@ const menuItems = [
     children: [
       { name: 'POS 收银', path: '/sales/checkout' },
       { name: '销售单列表', path: '/sales' },
-      { name: '退货管理', path: '/returns' },
+      { name: '销售退货', path: '/returns' },
     ],
   },
   {
@@ -102,18 +100,31 @@ const menuItems = [
     ],
   },
   {
+    name: '会员中心', icon: User,
+    children: [
+      { name: '会员管理', path: '/members' },
+      { name: '积分记录', path: '/points/records' },
+    ],
+  },
+  {
     name: '数据中心', icon: DataAnalysis,
     children: [
       { name: '销售统计', path: '/statistics/sales' },
       { name: '商品排行', path: '/statistics/products' },
       { name: '毛利分析', path: '/statistics/profit' },
       { name: '库存分析', path: '/statistics/inventory' },
+    ],
+  },
+  {
+    name: '财务管理', icon: Coin,
+    children: [
       { name: '供应商结算', path: '/settlements' },
     ],
   },
   {
     name: '系统管理', icon: Setting,
     children: [
+      { name: '员工管理', path: '/system/users' },
       { name: '角色管理', path: '/system/roles' },
       { name: '菜单管理', path: '/system/menus' },
     ],

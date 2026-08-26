@@ -10,8 +10,7 @@ const router = createRouter({
             {path:'dashboard',component:()=>import('../views/dashboard/DashboardView.vue')},
             
             //系统管理
-            // 旧地址保留兼容，统一跳转到独立的会员管理页面
-            {path:'system/users',redirect:'/members'},
+            {path:'system/users',component:()=>import('../views/system/UserListView.vue')},
             {path:'system/roles',component:()=>import('../views/system/RoleListView.vue')},
             {path:'system/menus',component:()=>import('../views/system/MenuListView.vue')},
 
