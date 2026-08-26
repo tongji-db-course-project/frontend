@@ -34,12 +34,41 @@ export interface ReturnDetail extends ReturnOrder {
 }
 
 export interface ReturnQuery extends PageQuery {
-  startDate?: string
-  endDate?: string
+  saleId?: number
 }
 
 export interface CreateReturnPayload {
   saleId: number
-  remark?: string
-  items: Array<{ productId: number; quantity: number }>
+  memberId?: number | null
+  operatorId: number
+  returnDate: string
+  remark?: string | null
+  details: Array<{
+    productId: number
+    quantity: number
+    refundPrice: number
+    subtotal?: number
+  }>
+}
+
+export interface ReturnApprovalPayload {
+  approverId: number
+  remark?: string | null
+}
+
+export interface ReturnConfirmResult {
+  returnId: number
+  returnNo: string
+  saleId: number
+  refundAmount: number
+  status: '已完成'
+  confirmTime: string
+}
+
+export interface ReturnStatusResult {
+  orderId: number
+  orderCode: string
+  status: string
+  operatorId?: number | null
+  changeTime: string
 }
