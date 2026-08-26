@@ -11,16 +11,16 @@
     </header>
 
     <section class="stats">
-      <article class="warning">
-        <small>待审批</small>
+      <article class="warning" :class="{ active: queryParams.status === '待审批' }" @click="filterByStatus('待审批')">
+        <small>本页待审批</small>
         <strong>{{ pendingCount }}</strong>
       </article>
-      <article>
-        <small>已审批</small>
+      <article :class="{ active: queryParams.status === '已审批' }" @click="filterByStatus('已审批')">
+        <small>本页已审批</small>
         <strong>{{ approvedCount }}</strong>
       </article>
-      <article class="success">
-        <small>已入库</small>
+      <article class="success" :class="{ active: queryParams.status === '已入库' }" @click="filterByStatus('已入库')">
+        <small>本页已入库</small>
         <strong>{{ stockInCount }}</strong>
       </article>
     </section>
@@ -49,7 +49,9 @@
             <el-link type="primary" @click="$router.push(`/purchases/${row.orderId}`)">{{ row.orderCode }}</el-link>
           </template>
         </el-table-column>
-        <el-table-column prop="supplierId" label="供应商ID" width="120" />
+        <el-table-column label="供应商" min-width="160">
+          <template #default="{ row }">{{ row.supplierName || supplierNameOf(row.supplierId) }}</template>
+        </el-table-column>
         <el-table-column prop="purchaseDate" label="采购日期" width="120" />
         <el-table-column prop="totalAmount" label="总金额" width="120">
           <template #default="{ row }">¥ {{ (row.totalAmount || 0).toFixed(2) }}</template>
@@ -66,6 +68,11 @@
           </template>
         </el-table-column>
       </el-table>
+      <div class="pagination">
+        <el-pagination v-model:current-page="queryParams.page" v-model:page-size="queryParams.size" background
+          layout="total, sizes, prev, pager, next, jumper" :page-sizes="[10, 20, 50]" :total="total"
+          @current-change="getList" @size-change="handleSizeChange" />
+      </div>
     </div>
   </div>
 </template>
@@ -74,56 +81,18 @@
 import { ref, reactive, onMounted } from 'vue';
 import { Plus, Search } from '@element-plus/icons-vue';
 import { purchaseApi } from '../../api/purchase';
+import { supplierApi } from '../../api/supplier';
 import { canCreatePurchase, canEditPurchaseBeforeApproval } from '../../utils/purchasePermissions';
 import type { PurchaseOrder, PurchaseQueryParams } from '../../types/purchase';
-
-const sampleOrders: PurchaseOrder[] = [
-  {
-    orderId: 1001,
-    orderCode: 'CG202607060001',
-    supplierId: 1,
-    purchaseDate: '2026-07-06',
-    totalAmount: 275,
-    applicantId: 3,
-    approverId: 1,
-    status: '待审批',
-    createTime: '2026-07-06T10:00:00',
-    updateTime: '2026-07-06T11:00:00',
-    details: [{ productId: 101, purchaseQuantity: 50, purchasePrice: 2.5 }],
-  },
-  {
-    orderId: 1002,
-    orderCode: 'CG202607060002',
-    supplierId: 2,
-    purchaseDate: '2026-07-07',
-    totalAmount: 520,
-    applicantId: 4,
-    approverId: 1,
-    status: '已审批',
-    createTime: '2026-07-07T09:00:00',
-    updateTime: '2026-07-07T10:30:00',
-    details: [{ productId: 102, purchaseQuantity: 40, purchasePrice: 13 }],
-  },
-  {
-    orderId: 1003,
-    orderCode: 'CG202607060003',
-    supplierId: 3,
-    purchaseDate: '2026-07-08',
-    totalAmount: 880,
-    applicantId: 5,
-    approverId: 2,
-    status: '已入库',
-    createTime: '2026-07-08T11:00:00',
-    updateTime: '2026-07-08T16:00:00',
-    details: [{ productId: 105, purchaseQuantity: 20, purchasePrice: 44 }],
-  },
-];
+import type { Supplier } from '../../types/supplier';
 
 const loading = ref(false);
-const list = ref<PurchaseOrder[]>([...sampleOrders]);
-const pendingCount = ref(1);
-const approvedCount = ref(1);
-const stockInCount = ref(1);
+const list = ref<PurchaseOrder[]>([]);
+const suppliers = ref<Supplier[]>([]);
+const total = ref(0);
+const pendingCount = ref(0);
+const approvedCount = ref(0);
+const stockInCount = ref(0);
 const queryParams = reactive<PurchaseQueryParams>({
   page: 1,
   size: 10,
@@ -149,9 +118,11 @@ const getList = async () => {
   loading.value = true;
   try {
     const res = await purchaseApi.getList(queryParams);
-    const payload = unwrapResponse<{ list?: PurchaseOrder[] }>(res);
-    const dataList = payload?.list && payload.list.length > 0 ? payload.list : sampleOrders;
-    list.value = dataList;
+    const payload = unwrapResponse<{ list?: PurchaseOrder[]; total?: number; page?: number; size?: number }>(res);
+    list.value = payload?.list ?? [];
+    total.value = Number(payload?.total ?? 0);
+    queryParams.page = Number(payload?.page || queryParams.page);
+    queryParams.size = Number(payload?.size || queryParams.size);
 
     pendingCount.value = list.value.filter((x) => x.status === '待审批').length;
     approvedCount.value = list.value.filter((x) => x.status === '已审批').length;
@@ -169,7 +140,29 @@ const handleSearch = () => {
   getList();
 };
 
-onMounted(getList);
+const filterByStatus = (status: PurchaseQueryParams['status']) => {
+  queryParams.status = queryParams.status === status ? undefined : status;
+  handleSearch();
+};
+
+const handleSizeChange = () => {
+  queryParams.page = 1;
+  getList();
+};
+
+const supplierNameOf = (supplierId?: number | null) =>
+  suppliers.value.find((item) => item.supplierId === supplierId)?.supplierName || `供应商 #${supplierId ?? '-'}`;
+
+const loadSuppliers = async () => {
+  try {
+    const result = await supplierApi.getList({ page: 1, size: 100, status: '启用' });
+    suppliers.value = result?.list ?? [];
+  } catch {
+    suppliers.value = [];
+  }
+};
+
+onMounted(() => Promise.all([getList(), loadSuppliers()]));
 </script>
 
 <style scoped>
@@ -180,7 +173,8 @@ onMounted(getList);
 .primary-btn { background: #1890ff; color: #fff; border: 0; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
 
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
-.stats article { background: #fff; padding: 20px; border-radius: 8px; border-left: 4px solid #1890ff; }
+.stats article { cursor: pointer; background: #fff; padding: 20px; border-radius: 8px; border: 1px solid transparent; border-left: 4px solid #1890ff; transition: .18s ease; }
+.stats article:hover,.stats article.active { border-color: #91caff; box-shadow: 0 4px 14px rgba(24,144,255,.12); transform: translateY(-1px); }
 .stats article.warning { border-left-color: #faad14; }
 .stats article.success { border-left-color: #52c41a; }
 .stats small { color: #8c8c8c; }
@@ -189,6 +183,7 @@ onMounted(getList);
 .main-card { background: #fff; padding: 20px; border-radius: 8px; }
 .toolbar { margin-bottom: 20px; display: flex; gap: 10px; }
 .search-box { width: 260px; }
+.pagination { display: flex; justify-content: flex-end; padding-top: 16px; }
 
 .status-tag { padding: 2px 8px; border-radius: 4px; font-size: 12px; }
 .status-tag.待审批 { background: #fff7e6; color: #faad14; }

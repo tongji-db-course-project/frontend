@@ -93,7 +93,7 @@
           <el-form-item label="会员姓名" prop="memberName"><el-input v-model.trim="form.memberName" placeholder="请输入会员姓名" /></el-form-item>
           <el-form-item label="手机号" prop="phone"><el-input v-model.trim="form.phone" maxlength="11" placeholder="请输入 11 位手机号" /></el-form-item>
           <el-form-item label="性别"><el-select v-model="form.gender" placeholder="请选择"><el-option label="男" value="男" /><el-option label="女" value="女" /><el-option label="未知" value="未知" /></el-select></el-form-item>
-          <el-form-item label="会员等级"><el-select v-model="form.levelName"><el-option label="普通会员" value="普通会员" /><el-option label="黄金会员" value="黄金会员" /><el-option label="钻石会员" value="钻石会员" /></el-select></el-form-item>
+          <el-form-item label="会员等级"><el-input :model-value="editingId ? '由累计消费自动计算' : '普通会员'" disabled /><small class="field-tip">会员等级由系统根据累计消费自动维护，不支持人工修改。</small></el-form-item>
           <el-form-item label="状态"><el-select v-model="form.status"><el-option label="启用" value="启用" /><el-option label="禁用" value="禁用" /></el-select></el-form-item>
         </div>
       </el-form>
@@ -147,7 +147,6 @@ import type { SaleOrder } from '../../types/sale'
 
 interface MemberForm extends Required<Pick<MemberDto, 'memberName' | 'phone'>> {
   gender: '男' | '女' | '未知'
-  levelName: string
   status: string
 }
 
@@ -166,7 +165,7 @@ const orderTotal = ref(0)
 const formRef = ref<FormInstance>()
 const query = reactive<MemberQuery>({ page: 1, size: 10, keyword: '', status: '' })
 const orderQuery = reactive({ page: 1, size: 8 })
-const emptyForm = (): MemberForm => ({ memberName: '', phone: '', gender: '未知', levelName: '普通会员', status: '启用' })
+const emptyForm = (): MemberForm => ({ memberName: '', phone: '', gender: '未知', status: '启用' })
 const form = reactive<MemberForm>(emptyForm())
 
 const rules: FormRules<MemberForm> = {
@@ -234,7 +233,6 @@ async function openEdit(member: Member) {
       memberName: detail.memberName,
       phone: detail.phone,
       gender: detail.gender || '未知',
-      levelName: detail.levelName || '普通会员',
       status: detail.status || '启用',
     })
     formVisible.value = true
@@ -248,7 +246,6 @@ function buildPayload(): MemberDto {
     memberName: form.memberName,
     phone: form.phone,
     gender: form.gender,
-    levelName: form.levelName,
     status: form.status,
   }
 }

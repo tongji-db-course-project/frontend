@@ -57,7 +57,7 @@ const titles = {
   '/purchases': '采购管理',
   '/sales': '销售管理',
   '/sales/checkout': 'POS 收银',
-  '/returns': '退货管理',
+  '/returns': '销售退货',
   '/inventory': '当前库存',
   '/inventory/records': '库存流水',
   '/settlements': '供应商结算',
@@ -66,7 +66,7 @@ const titles = {
   '/statistics/profit': '毛利分析',
   '/statistics/inventory': '库存分析',
   '/points/records': '积分记录',
-  '/system/users': '用户管理',
+  '/system/users': '员工管理',
   '/system/roles': '角色管理',
   '/system/menus': '菜单管理',
 }
@@ -75,7 +75,7 @@ const currentTitle = computed(() => {
   if (route.meta.title) return String(route.meta.title)
   if (titles[route.path]) return titles[route.path]
   if (/^\/sales\/\d+$/.test(route.path)) return '销售单详情'
-  if (/^\/returns\/\d+$/.test(route.path)) return '退货单详情'
+  if (/^\/returns\/\d+$/.test(route.path)) return '销售退货单详情'
   return '业务工作台'
 })
 

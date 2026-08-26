@@ -15,7 +15,7 @@ export interface SystemUser {
 export interface UserQuery extends PageQuery {}
 
 export interface CreateUserPayload {
-  roleId: number
+  roleId?: number | null
   username: string
   password: string
   realName?: string | null
