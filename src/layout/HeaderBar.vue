@@ -66,7 +66,7 @@ const titles = {
   '/statistics/profit': '毛利分析',
   '/statistics/inventory': '库存分析',
   '/points/records': '积分记录',
-  '/system/users': '会员管理',
+  '/system/users': '用户管理',
   '/system/roles': '角色管理',
   '/system/menus': '菜单管理',
 }
