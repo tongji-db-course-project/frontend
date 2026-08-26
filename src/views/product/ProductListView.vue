@@ -1,6 +1,6 @@
 <template>
   <div class="data-page">
-    <header class="page-head"><div><p>基础资料 · 商品档案</p><h1>商品管理</h1></div><el-button type="primary" :icon="Plus" @click="openForm()">新增商品</el-button></header>
+    <header class="page-head"><div><p>基础资料 · 商品档案</p><h1>商品管理</h1></div><el-button v-if="canEdit" type="primary" :icon="Plus" @click="openForm()">新增商品</el-button></header>
     <section class="stats">
       <article><span class="blue"><Goods /></span><div><small>商品总数</small><strong>{{ total }}</strong></div></article>
       <article><span class="green"><CircleCheckFilled /></span><div><small>本页正常销售</small><strong>{{ enabledCount }}</strong></div></article>
@@ -18,7 +18,7 @@
           <td><div class="item-info"><i>{{ item.productName?.slice(0,1) || '?' }}</i><div><b>{{ item.productName }}</b><small>{{ item.barcode || '无条码' }} · {{ item.specification || '暂无规格' }}</small></div></div></td>
           <td><code>#{{ item.productId }}</code></td><td><b>{{ item.categoryName || `分类 #${item.categoryId}` }}</b><small class="block">{{ item.supplierName || `供应商 #${item.supplierId}` }}</small></td><td><b>¥ {{ Number(item.salePrice || 0).toFixed(2) }}</b></td><td>{{ item.currentStock }} {{ item.unit || '' }}</td>
           <td><span class="status" :class="{off:item.status!=='在售'}"><i />{{ item.status || '未知' }}</span></td>
-          <td class="actions"><button @click="openDetail(item)">查看</button><button @click="openForm(item)">编辑</button><button class="danger" @click="removeProduct(item)">删除</button></td>
+          <td class="actions"><button @click="openDetail(item)">查看</button><button v-if="canEdit" @click="openForm(item)">编辑</button><button v-if="canEdit" class="danger" @click="removeProduct(item)">删除</button></td>
         </tr></tbody></table></div>
       <div v-if="!loading && products.length===0" class="empty-state">暂无商品数据</div>
       <footer><span>第 {{ page }} 页，每页 {{ size }} 条</span><div><button :disabled="page<=1" @click="changePage(page-1)">‹</button><button class="active">{{ page }}</button><button :disabled="page*size>=total" @click="changePage(page+1)">›</button></div></footer>
@@ -58,10 +58,13 @@ import { CircleCheckFilled, Collection, Goods, Plus, Search, WarningFilled } fro
 import { productApi } from '../../api/product'
 import { categoryApi } from '../../api/category'
 import { supplierApi } from '../../api/supplier'
+import { useAuthStore } from '../../stores/auth'
 import type { Product, ProductCategory, ProductListItem, ProductPayload } from '../../types/product'
 import type { Supplier } from '../../types/supplier'
 
 const products=ref<ProductListItem[]>([])
+const authStore=useAuthStore()
+const canEdit=computed(()=>(authStore.userInfo?.roleName||authStore.roleName)!=='收银员')
 const keyword=ref(''),status=ref('')
 const loading=ref(false),total=ref(0),page=ref(1),size=ref(10)
 const formVisible=ref(false),detailVisible=ref(false),saving=ref(false),detailLoading=ref(false)

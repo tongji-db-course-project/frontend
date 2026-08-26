@@ -7,7 +7,7 @@
       </div>
       <div class="heading-actions">
         <button class="ghost-button" :disabled="loading || !daily.length" @click="exportReport"><Download />导出报表</button>
-        <button class="primary-button" @click="router.push('/sales/checkout')"><Plus />新建销售单</button>
+        <button v-if="canAccess('/sales/checkout')" class="primary-button" @click="router.push('/sales/checkout')"><Plus />新建销售单</button>
       </div>
     </section>
 
@@ -89,7 +89,7 @@
       <article class="card ranking-card">
         <header class="card-header">
           <div><h2>热销商品</h2><p>按销售额排序</p></div>
-          <button class="link-button" @click="router.push('/statistics/products')">查看全部 →</button>
+          <button v-if="canAccess('/statistics/products')" class="link-button" @click="router.push('/statistics/products')">查看全部 →</button>
         </header>
         <div v-if="rankings.length" class="ranking-list">
           <div v-for="(item, index) in rankings" :key="item.name">
@@ -115,7 +115,7 @@
           </div>
         </div>
         <el-empty v-else description="当前没有库存预警" :image-size="72" />
-        <button class="full-button" @click="router.push('/inventory')">前往库存管理</button>
+        <button v-if="canAccess('/inventory')" class="full-button" @click="router.push('/inventory')">前往库存管理</button>
       </article>
     </section>
   </div>
@@ -130,10 +130,17 @@ import { statisticsApi } from '../../api/statistics'
 import { inventoryApi } from '../../api/inventory'
 import { formatMoney } from '../../utils/format'
 import BaseChart from '../../components/charts/BaseChart.vue'
+import { useAuthStore } from '../../stores/auth'
 import type { DailySalesStatistics, InventoryStatistics, ProductRankItem } from '../../types/statistics'
 import type { InventoryItem } from '../../types/inventory'
 
 const router=useRouter(),loading=ref(false),updatedAt=ref(''),errorMessage=ref(''),period=ref(7),endDate=ref(new Date().toISOString().slice(0,10))
+const authStore=useAuthStore()
+const canAccess=(path:string)=>{
+  const roleName=authStore.userInfo?.roleName||authStore.roleName
+  const prefixes:Record<string,string[]>={采购员:['/dashboard','/product','/sales','/members'],收银员:['/dashboard','/product','/purchases','/inventory']}
+  return !prefixes[roleName]||prefixes[roleName].some(prefix=>path===prefix||path.startsWith(`${prefix}/`))
+}
 const daily=ref<DailySalesStatistics[]>([]),rankData=ref<ProductRankItem[]>([]),warningItems=ref<InventoryItem[]>([]),inventoryStats=ref<InventoryStatistics|null>(null)
 const dateParams=computed(()=>{const end=new Date(`${endDate.value}T00:00:00`);const start=new Date(end);start.setDate(start.getDate()-period.value+1);return{startDate:start.toISOString().slice(0,10),endDate:endDate.value}})
 const totals=computed(()=>daily.value.reduce((sum,item)=>({amount:sum.amount+Number(item.totalAmount||0),paid:sum.paid+Number(item.paidAmount||0),refund:sum.refund+Number(item.refundAmount||0),net:sum.net+Number(item.netAmount||0),orders:sum.orders+Number(item.orderCount||0)}),{amount:0,paid:0,refund:0,net:0,orders:0}))

@@ -57,6 +57,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 import {
   Box, Coin, DataAnalysis, Goods, HomeFilled, List, Setting,
   ShoppingCart, Search, User,
@@ -64,6 +65,7 @@ import {
 
 defineEmits(['navigate'])
 const route = useRoute()
+const authStore = useAuthStore()
 const openedMenus = ['数据中心']
 const searchKeyword = ref('')
 const searchInput = ref(null)
@@ -131,10 +133,26 @@ const menuItems = [
   },
 ]
 
+const rolePaths = {
+  采购员: ['/dashboard', '/product', '/sales', '/sales/checkout', '/members'],
+  收银员: ['/dashboard', '/product', '/purchases', '/purchases/create', '/inventory', '/inventory/records'],
+}
+
+const visibleMenuItems = computed(() => {
+  const roleName = authStore.userInfo?.roleName || authStore.roleName
+  const allowed = rolePaths[roleName]
+  if (!allowed) return menuItems
+  return menuItems.flatMap(item => {
+    if (!item.children) return allowed.includes(item.path) ? [item] : []
+    const children = item.children.filter(child => allowed.includes(child.path))
+    return children.length ? [{ ...item, children }] : []
+  })
+})
+
 const filteredMenuItems = computed(() => {
   const keyword = searchKeyword.value.toLowerCase()
-  if (!keyword) return menuItems
-  return menuItems.flatMap(item => {
+  if (!keyword) return visibleMenuItems.value
+  return visibleMenuItems.value.flatMap(item => {
     if (item.name.toLowerCase().includes(keyword)) return [item]
     if (!item.children) return []
     const children = item.children.filter(child => child.name.toLowerCase().includes(keyword))
