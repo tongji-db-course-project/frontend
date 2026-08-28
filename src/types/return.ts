@@ -31,6 +31,7 @@ export interface ReturnItem {
 
 export interface ReturnDetail extends ReturnOrder {
   items?: ReturnItem[]
+  details?: ReturnItem[]
 }
 
 export interface ReturnQuery extends PageQuery {
@@ -49,26 +50,4 @@ export interface CreateReturnPayload {
     refundPrice: number
     subtotal?: number
   }>
-}
-
-export interface ReturnApprovalPayload {
-  approverId: number
-  remark?: string | null
-}
-
-export interface ReturnConfirmResult {
-  returnId: number
-  returnNo: string
-  saleId: number
-  refundAmount: number
-  status: '已完成'
-  confirmTime: string
-}
-
-export interface ReturnStatusResult {
-  orderId: number
-  orderCode: string
-  status: string
-  operatorId?: number | null
-  changeTime: string
 }
