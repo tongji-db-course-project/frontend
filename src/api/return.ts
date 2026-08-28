@@ -2,28 +2,25 @@ import request from '../utils/request'
 import type { PageResult } from '../types/common'
 import type {
   CreateReturnPayload,
-  ReturnApprovalPayload,
-  ReturnConfirmResult,
   ReturnDetail,
   ReturnOrder,
   ReturnQuery,
-  ReturnStatusResult,
 } from '../types/return'
+
+const RETURN_PATH = '/return-orders'
 
 export const returnApi = {
   getList(params: ReturnQuery) {
-    return request.get<unknown, PageResult<ReturnOrder>>('/return-orders', { params })
+    return request.get<unknown, PageResult<ReturnOrder>>(RETURN_PATH, { params })
   },
-  getDetail(returnId: number) {
-    return request.get<unknown, ReturnDetail>(`/return-orders/${returnId}`)
+  async getDetail(returnId: number) {
+    const result = await request.get<unknown, ReturnDetail>(`${RETURN_PATH}/${returnId}`)
+    return { ...result, items: result.items ?? result.details ?? [] }
   },
   create(data: CreateReturnPayload) {
-    return request.post<unknown, ReturnOrder>('/return-orders', data)
+    return request.post<unknown, ReturnOrder>(RETURN_PATH, data)
   },
   confirm(returnId: number) {
-    return request.post<unknown, ReturnConfirmResult>(`/return-orders/${returnId}/confirm`)
-  },
-  reject(returnId: number, data: ReturnApprovalPayload) {
-    return request.post<unknown, ReturnStatusResult>(`/return-orders/${returnId}/reject`, data)
+    return request.post<unknown, ReturnDetail>(`${RETURN_PATH}/${returnId}/confirm`)
   },
 }

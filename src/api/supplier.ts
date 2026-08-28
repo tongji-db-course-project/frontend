@@ -3,6 +3,7 @@ import type { PageResult } from '../types/common'
 import type { Supplier, SupplierPayload, SupplierQuery } from '../types/supplier'
 
 type RawSupplier = Partial<Supplier> & {
+  contactPerson?: string | null
   supplieR_ID?: number
   supplieR_NAME?: string
   contacT_NAME?: string | null
@@ -16,7 +17,7 @@ type RawSupplier = Partial<Supplier> & {
 const normalizeSupplier = (item: RawSupplier): Supplier => ({
   supplierId: item.supplierId ?? item.supplieR_ID ?? 0,
   supplierName: item.supplierName ?? item.supplieR_NAME ?? '',
-  contactName: item.contactName ?? item.contacT_NAME ?? null,
+  contactName: item.contactName ?? item.contactPerson ?? item.contacT_NAME ?? null,
   phone: item.phone ?? null,
   email: item.email ?? null,
   address: item.address ?? null,
@@ -28,6 +29,11 @@ const normalizeSupplier = (item: RawSupplier): Supplier => ({
   status: item.status === '禁用' ? '禁用' : '启用',
 })
 
+const toSupplierRequest = (data: SupplierPayload) => {
+  const { contactName, ...rest } = data
+  return { ...rest, contactPerson: contactName }
+}
+
 export const supplierApi = {
   async getList(params: SupplierQuery) {
     const result = await request.get<unknown, PageResult<RawSupplier>>('/suppliers', { params })
@@ -38,11 +44,13 @@ export const supplierApi = {
     const result = await request.get<unknown, RawSupplier>(`/suppliers/${supplierId}`)
     return normalizeSupplier(result)
   },
-  create(data: SupplierPayload) {
-    return request.post<unknown, Supplier>('/suppliers', data)
+  async create(data: SupplierPayload) {
+    const result = await request.post<unknown, RawSupplier>('/suppliers', toSupplierRequest(data))
+    return normalizeSupplier(result)
   },
-  update(supplierId: number, data: SupplierPayload) {
-    return request.put<unknown, Supplier>(`/suppliers/${supplierId}`, data)
+  async update(supplierId: number, data: SupplierPayload) {
+    const result = await request.put<unknown, RawSupplier>(`/suppliers/${supplierId}`, toSupplierRequest(data))
+    return normalizeSupplier(result)
   },
   remove(supplierId: number) {
     return request.delete<unknown, null>(`/suppliers/${supplierId}`)
