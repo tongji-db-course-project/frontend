@@ -30,7 +30,6 @@
           <p v-if="member"><el-tag type="success">普通会员</el-tag><b>{{ member.memberName }}</b><span>{{ member.phone }} · {{ member.points ?? 0 }} 积分</span><el-button link type="danger" @click="removeMember">移除</el-button></p>
         </div>
         <div class="checkout-options">
-          <label>支付方式</label><el-radio-group v-model="payType"><el-radio-button value="现金">现金</el-radio-button><el-radio-button value="微信">微信</el-radio-button><el-radio-button value="支付宝">支付宝</el-radio-button></el-radio-group>
           <label>出库仓库</label><el-input-number v-model="warehouseId" :min="1" :precision="0" controls-position="right" />
           <label>兑换积分</label><el-input-number v-model="redeemPoints" :min="0" :max="member?.points ?? 0" :precision="0" :disabled="!member" />
         </div>
@@ -54,7 +53,7 @@ import { memberApi } from '../../api/member'
 import { saleApi } from '../../api/sale'
 import type { ProductListItem } from '../../types/product'
 import type { Member } from '../../types/member'
-import type { PayType, SaleOrder } from '../../types/sale'
+import type { SaleOrder } from '../../types/sale'
 import { formatMoney } from '../../utils/format'
 
 type CheckoutProduct = ProductListItem
@@ -68,7 +67,6 @@ const cart = ref<CartItem[]>([])
 const memberPhone = ref('')
 const member = ref<Member | null>(null)
 const memberLoading = ref(false)
-const payType = ref<PayType>('微信')
 const warehouseId = ref(1)
 const redeemPoints = ref(0)
 const submitting = ref(false)
@@ -114,7 +112,6 @@ async function checkout() {
     lastSale.value = await saleApi.create({
       memberId: member.value?.memberId,
       warehouseId: warehouseId.value,
-      payType: payType.value,
       redeemPoints: redeemPoints.value,
       items: cart.value.map(item => ({ productId: item.product.productId, quantity: item.quantity })),
     })
