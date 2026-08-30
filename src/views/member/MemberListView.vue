@@ -124,7 +124,7 @@
           <div class="order-list" v-loading="ordersLoading">
             <article v-for="order in orders" :key="order.saleId">
               <i />
-              <div class="order-main"><strong>{{ order.saleNo || `订单 #${order.saleId}` }}</strong><small>{{ formatDateTime(order.saleDate) }} · {{ order.payType || '支付方式未知' }}</small></div>
+              <div class="order-main"><strong>{{ order.saleNo || `订单 #${order.saleId}` }}</strong><small>{{ formatDateTime(order.saleDate) }}</small></div>
               <div class="order-amount"><strong>{{ formatMoney(order.paidAmount ?? order.totalAmount) }}</strong><small>{{ order.status || '—' }}</small></div>
             </article>
             <div v-if="!ordersLoading && !orders.length" class="empty">暂无消费记录</div>

@@ -1,7 +1,6 @@
 import type { PageQuery } from './common'
 
 export type SaleStatus = '待支付' | '已完成' | '已取消'
-export type PayType = '现金' | '微信' | '支付宝'
 
 export interface SaleOrder {
   saleId: number
@@ -14,7 +13,6 @@ export interface SaleOrder {
   totalAmount?: number | null
   discountAmount?: number | null
   paidAmount?: number | null
-  payType?: PayType | null
   status?: SaleStatus | null
   createTime?: string | null
   updateTime?: string | null
@@ -48,7 +46,6 @@ export interface SaleQuery extends PageQuery {
 export interface SaleCheckoutPayload {
   memberId?: number | null
   warehouseId: number
-  payType: PayType
   redeemPoints: number
   items: SaleCheckoutDetail[]
 }
