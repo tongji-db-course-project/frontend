@@ -23,4 +23,10 @@ export const returnApi = {
   confirm(returnId: number) {
     return request.post<unknown, ReturnDetail>(`${RETURN_PATH}/${returnId}/confirm`)
   },
+  reject(returnId: number, data: { approverId: number; remark?: string | null }) {
+    return request.post<unknown, ReturnDetail>(`${RETURN_PATH}/${returnId}/reject`, {
+      operatorId: data.approverId,
+      remark: data.remark,
+    })
+  },
 }

@@ -22,4 +22,8 @@ export const settlementApi = {
     const result = await request.get<unknown, RawSettlement>(`/settlements/${settlementId}`)
     return normalizeSettlement(result)
   },
+  async pay(settlementId: number, paidAmount: number, remark?: string) {
+    const result = await request.put<unknown, RawSettlement>(`/settlements/${settlementId}/pay`, { paidAmount, remark })
+    return normalizeSettlement(result)
+  },
 }
