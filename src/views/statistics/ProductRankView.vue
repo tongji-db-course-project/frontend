@@ -3,7 +3,7 @@
     <PageHeader
       eyebrow="数据中心 · 商品表现"
       title="商品排行"
-      description="后端按销量返回 Top 10，并在返回结果中对比销售额"
+      description="统计所选时间内销量和销售额排名前几的商品，排行数量可调整"
     />
 
     <section class="biz-card range-card">
@@ -43,7 +43,7 @@
         <el-empty v-else description="暂无销量排行数据" />
       </section>
       <section class="biz-card biz-chart-card">
-        <h3>返回商品销售额对比</h3>
+        <h3>商品累计销售额 Top {{ limit }}</h3>
         <BaseChart v-if="amountRanking.length" :option="amountOption" height="380px" />
         <el-empty v-else description="暂无销售额数据" />
       </section>

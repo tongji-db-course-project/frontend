@@ -66,8 +66,8 @@ const summary = computed(() => statistics.value.reduce((result, item) => ({
 
 const trendOption = computed(() => ({
   tooltip: { trigger: 'axis' },
-  legend: { data: ['订单总额', '实收金额', '净销售额'] },
-  grid: { left: 58, right: 32, top: 44, bottom: 38 },
+  legend: { bottom: 0, data: ['订单总额', '实收金额', '净销售额'] },
+  grid: { left: 58, right: 32, top: 44, bottom: 58 },
   xAxis: { type: 'category', data: statistics.value.map(item => item.statDate) },
   yAxis: { type: 'value' },
   series: [

@@ -24,7 +24,15 @@
         <el-table-column label="退款金额" width="125" align="right"><template #default="{ row }"><strong>{{ formatMoney(row.refundAmount) }}</strong></template></el-table-column>
         <el-table-column label="状态" width="95" align="center"><template #default="{ row }"><span class="biz-status" :class="statusTone(row.status)">{{ row.status }}</span></template></el-table-column>
         <el-table-column label="备注" min-width="170"><template #default="{ row }">{{ row.remark || '-' }}</template></el-table-column>
-        <el-table-column label="操作" width="90" fixed="right" align="center"><template #default="{ row }"><el-button link type="primary" @click="showDetail(row)">详情</el-button></template></el-table-column>
+        <el-table-column label="操作" width="200" fixed="right" align="center"><template #default="{ row }">
+          <el-button link type="primary" @click="showDetail(row)">详情</el-button>
+          <template v-if="row.status === '待处理'">
+            <el-popconfirm title="确认批准该退货申请？确认后将入库并退款。" confirm-button-text="批准" cancel-button-text="取消" width="260" @confirm="approve(row)">
+              <template #reference><el-button link type="success">批准</el-button></template>
+            </el-popconfirm>
+            <el-button link type="danger" @click="openReject(row)">拒绝</el-button>
+          </template>
+        </template></el-table-column>
       </el-table>
       <div class="biz-pagination"><el-pagination background layout="total, sizes, prev, pager, next, jumper" :total="total" v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10,20,50]" @change="load" /></div>
     </section>
@@ -35,8 +43,18 @@
         <div class="biz-form-grid"><el-form-item label="原销售单 ID" required><div class="sale-id-field"><el-input-number v-model="createForm.saleId" :min="1" controls-position="right" /><el-button :loading="saleLoading" @click="loadSourceSale">读取销售单</el-button></div></el-form-item><el-form-item label="退货原因"><el-input v-model="createForm.remark" maxlength="200" /></el-form-item></div>
       </el-form>
       <el-descriptions v-if="sourceSale" :column="2" border size="small" class="source-sale"><el-descriptions-item label="销售单号">{{ sourceSale.saleNo }}</el-descriptions-item><el-descriptions-item label="订单状态"><el-tag :type="sourceSale.status === '已完成' ? 'success' : 'warning'">{{ sourceSale.status || '-' }}</el-tag></el-descriptions-item><el-descriptions-item label="实付金额">{{ formatMoney(sourceSale.paidAmount) }}</el-descriptions-item><el-descriptions-item label="商品种类">{{ sourceSale.items?.length || 0 }}</el-descriptions-item></el-descriptions>
-      <div class="return-lines"><header><b>选择退货商品</b><small v-if="sourceSale">数量填写为 0 表示不退该商品</small></header><el-table v-loading="saleLoading" :data="createForm.items" border size="small"><el-table-column label="商品" min-width="230"><template #default="{ row }"><b>{{ sourceItem(row.productId)?.productName || `商品 #${row.productId}` }}</b><small class="biz-muted" style="display:block">{{ sourceItem(row.productId)?.barcode || '-' }}</small></template></el-table-column><el-table-column label="购买数量" width="100" align="center"><template #default="{ row }">{{ sourceItem(row.productId)?.quantity ?? '-' }}</template></el-table-column><el-table-column label="退款单价" width="120" align="right"><template #default="{ row }">{{ formatMoney(row.refundPrice) }}</template></el-table-column><el-table-column label="退货数量" width="180"><template #default="{ row }"><el-input-number v-model="row.quantity" :min="0" :max="sourceItem(row.productId)?.quantity || 1" controls-position="right" /></template></el-table-column></el-table><el-empty v-if="!saleLoading && !createForm.items.length" description="请先读取包含商品明细的销售单" :image-size="70" /></div>
+      <div class="return-lines"><header><b>选择退货商品</b><small v-if="sourceSale">数量填写为 0 表示不退该商品</small></header><el-table v-loading="saleLoading" :data="createForm.items" border size="small"><el-table-column label="商品" min-width="230"><template #default="{ row }"><b>{{ sourceItem(row.productId)?.productName || `商品 #${row.productId}` }}</b><small class="biz-muted" style="display:block">{{ sourceItem(row.productId)?.barcode || '-' }}</small></template></el-table-column><el-table-column label="购买数量" width="100" align="center"><template #default="{ row }">{{ sourceItem(row.productId)?.quantity ?? '-' }}</template></el-table-column><el-table-column label="退款单价" width="120" align="right"><template #default="{ row }">{{ formatMoney(row.refundPrice) }}</template></el-table-column><el-table-column label="退货数量" width="200">
+  <template #default="{ row }">
+    <el-input-number v-if="row.maxReturnable > 0" v-model="row.quantity" :min="0" :max="row.maxReturnable" controls-position="right" />
+    <el-tag v-else type="danger" size="small">已全额退货</el-tag>
+  </template>
+</el-table-column></el-table><el-empty v-if="!saleLoading && !createForm.items.length" description="请先读取包含商品明细的销售单" :image-size="70" /></div>
       <template #footer><el-button @click="createVisible=false">取消</el-button><el-button type="primary" :loading="submitting" @click="submitReturn">提交申请</el-button></template>
+    </el-dialog>
+
+    <el-dialog v-model="rejectVisible" title="拒绝退货申请" width="480px">
+      <el-form label-position="top" style="margin-top:8px"><el-form-item label="拒绝原因"><el-input v-model="rejectRemark" type="textarea" :rows="3" maxlength="200" show-word-limit placeholder="请填写拒绝原因（将记录到状态流转日志中）" /></el-form-item></el-form>
+      <template #footer><el-button @click="rejectVisible=false">取消</el-button><el-button type="danger" :loading="rejectLoading" @click="submitReject">确认拒绝</el-button></template>
     </el-dialog>
   </div>
 </template>
@@ -55,12 +73,13 @@ import type { ReturnOrder, ReturnQuery, ReturnStatus } from '../../types/return'
 import type { SaleOrder } from '../../types/sale'
 import { formatDateTime, formatMoney } from '../../utils/format'
 
-interface ReturnDraftItem { productId: number; quantity: number; refundPrice: number }
+interface ReturnDraftItem { productId: number; quantity: number; refundPrice: number; maxReturnable: number }
 interface ReturnDraft { saleId: number; remark: string; items: ReturnDraftItem[] }
 
 const route = useRoute(), router = useRouter(), authStore = useAuthStore(), orders = ref<ReturnOrder[]>([]), loading = ref(false), total = ref(0)
 const query = reactive<ReturnQuery>({ page: 1, size: 10, keyword: '', status: '' })
 const createVisible = ref(false), submitting = ref(false)
+const rejectVisible = ref(false), rejectLoading = ref(false), rejectTarget = ref<ReturnOrder | null>(null), rejectRemark = ref('')
 const createForm = reactive<ReturnDraft>({ saleId: Number(route.query.saleId) || 0, remark: '', items: [] })
 const sourceSale = ref<SaleOrder | null>(null), saleLoading = ref(false)
 const refundTotal = computed(() => orders.value.reduce((sum, item) => sum + Number(item.refundAmount ?? 0), 0))
@@ -71,10 +90,69 @@ async function load() { loading.value = true; try { const result = await returnA
 function search() { query.page = 1; load() }
 function reset() { Object.assign(query, { page: 1, size: 10, keyword: '', status: '' }); load() }
 function showDetail(row: ReturnOrder) { router.push(`/returns/${row.returnId}`) }
+async function approve(row: ReturnOrder) {
+  try { await returnApi.confirm(row.returnId); ElMessage.success(`已批准退货单 ${row.returnNo}`); await load() }
+  catch (e: any) { ElMessage.error(e?.response?.data?.message || '批准失败，请稍后重试') }
+}
+function openReject(row: ReturnOrder) { rejectTarget.value = row; rejectRemark.value = ''; rejectVisible.value = true }
+async function submitReject() {
+  if (!rejectTarget.value) return;
+  const operatorId = Number(authStore.userInfo?.userId || 0);
+  rejectLoading.value = true;
+  try { await returnApi.reject(rejectTarget.value.returnId, { approverId: operatorId, remark: rejectRemark.value || null }); ElMessage.success('已拒绝该退货申请'); rejectVisible.value = false; rejectTarget.value = null; await load() }
+  catch (e: any) { ElMessage.error(e?.response?.data?.message || '拒绝失败，请稍后重试') }
+  finally { rejectLoading.value = false }
+}
 function openCreate() { createVisible.value = true; if (createForm.saleId > 0) void loadSourceSale() }
 const sourceItem = (productId: number) => sourceSale.value?.items?.find(item => item.productId === productId)
-async function loadSourceSale() { if (createForm.saleId <= 0) { ElMessage.warning('请先填写销售单 ID'); return } saleLoading.value = true; sourceSale.value = null; createForm.items.splice(0); try { const sale = await saleApi.getDetail(createForm.saleId); if (sale.status !== '已完成') { ElMessage.warning('只有已完成的销售单可以发起退货'); return } if (!sale.items?.length) { ElMessage.warning('该销售单未返回商品明细，暂时无法创建退货'); return } sourceSale.value = sale; createForm.items.push(...sale.items.map(item => ({ productId: item.productId, quantity: 0, refundPrice: Number(item.unitPrice ?? item.salePrice ?? 0) }))) } catch { ElMessage.error('销售单读取失败，请检查编号后重试') } finally { saleLoading.value = false } }
-async function submitReturn() { const details = createForm.items.filter(item => item.productId > 0 && item.quantity > 0).map(item => ({ ...item, subtotal: item.quantity * item.refundPrice })); if (!sourceSale.value || !details.length) { ElMessage.warning('请读取销售单并选择至少一项退货商品'); return } const operatorId = Number(authStore.userInfo?.userId || 0); if (operatorId <= 0) { ElMessage.error('无法识别当前登录用户，请重新登录后再试'); return } submitting.value = true; try { await returnApi.create({ saleId: createForm.saleId, memberId: sourceSale.value.memberId ?? null, operatorId, returnDate: new Date().toLocaleDateString('en-CA'), remark: createForm.remark || null, details }); ElMessage.success('退货申请已提交'); createVisible.value = false; Object.assign(createForm, { saleId: 0, remark: '', items: [] }); sourceSale.value = null; await load() } finally { submitting.value = false } }
+async function loadSourceSale() {
+  if (createForm.saleId <= 0) { ElMessage.warning('请先填写销售单 ID'); return }
+  saleLoading.value = true; sourceSale.value = null; createForm.items.splice(0)
+  try {
+    const sale = await saleApi.getDetail(createForm.saleId)
+    if (sale.status !== '已完成') { ElMessage.warning('只有已完成的销售单可以发起退货'); return }
+    if (!sale.items?.length) { ElMessage.warning('该销售单未返回商品明细，暂时无法创建退货'); return }
+    // 读取该销售单所有未被拒绝的退货申请，按商品累计已退数量，限制"第二次及以后退货不能超过剩余量"
+    const alreadyReturned = new Map<number, number>()
+    try {
+      const saleNoKw = sale.saleNo ?? ''
+      if (saleNoKw) {
+        const existing = (await returnApi.getList({ page: 1, size: 200, keyword: saleNoKw, status: undefined }))?.list ?? []
+        for (const ro of existing) {
+          if (!ro || ro.status === '已拒绝') continue
+          if ((ro.saleId ?? 0) !== createForm.saleId) continue
+          try {
+            const det = await returnApi.getDetail(ro.returnId)
+            if (det.items) for (const it of det.items) alreadyReturned.set(it.productId, (alreadyReturned.get(it.productId) ?? 0) + Number(it.quantity ?? 0))
+          } catch { /* ignore */ }
+        }
+      }
+    } catch { /* ignore — 读不到历史退单时退化为原数量上限，后端仍会拦截 */ }
+    sourceSale.value = sale
+    createForm.items.push(...sale.items.map(item => {
+      const sold = Number(item.quantity ?? 0)
+      const returned = Number(alreadyReturned.get(item.productId) ?? 0)
+      const maxReturnable = Math.max(0, sold - returned)
+      return { productId: item.productId, quantity: 0, refundPrice: Number(item.unitPrice ?? item.salePrice ?? 0), maxReturnable }
+    }))
+  } catch { ElMessage.error('销售单读取失败，请检查编号后重试') }
+  finally { saleLoading.value = false }
+}
+async function submitReturn() {
+  const overflow = createForm.items.find(it => it.maxReturnable > 0 && it.quantity > it.maxReturnable)
+  if (overflow) { ElMessage.warning(`商品 #${overflow.productId} 最多可退 ${overflow.maxReturnable} 件`); return }
+  const details = createForm.items.filter(item => item.productId > 0 && item.quantity > 0).map(item => ({ ...item, subtotal: item.quantity * item.refundPrice }))
+  if (!sourceSale.value || !details.length) { ElMessage.warning('请读取销售单并选择至少一项退货商品'); return }
+  const operatorId = Number(authStore.userInfo?.userId || 0)
+  if (operatorId <= 0) { ElMessage.error('无法识别当前登录用户，请重新登录后再试'); return }
+  submitting.value = true
+  try {
+    await returnApi.create({ saleId: createForm.saleId, memberId: sourceSale.value.memberId ?? null, operatorId, returnDate: new Date().toLocaleDateString('en-CA'), remark: createForm.remark || null, details })
+    ElMessage.success('退货申请已提交')
+    createVisible.value = false; Object.assign(createForm, { saleId: 0, remark: '', items: [] })
+    sourceSale.value = null; await load()
+  } finally { submitting.value = false }
+}
 onMounted(() => { load(); if (route.query.saleId) openCreate() })
 </script>
 

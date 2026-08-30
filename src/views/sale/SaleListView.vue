@@ -1,6 +1,6 @@
 <template>
   <div class="biz-page">
-    <PageHeader eyebrow="销售管理 · 订单查询" title="销售单列表" description="查询门店销售订单、支付金额与订单状态">
+    <PageHeader eyebrow="销售管理 · 订单查询" title="销售单列表" description="查询门店销售订单、订单金额与订单状态">
       <el-button type="primary" :icon="ShoppingCart" @click="router.push('/sales/checkout')">进入 POS 收银</el-button>
     </PageHeader>
     <section class="biz-stats">
@@ -23,7 +23,6 @@
         <el-table-column label="原始金额" width="115" align="right"><template #default="{ row }">{{ formatMoney(row.totalAmount) }}</template></el-table-column>
         <el-table-column label="优惠金额" width="115" align="right"><template #default="{ row }"><span class="biz-negative">-{{ formatMoney(row.discountAmount) }}</span></template></el-table-column>
         <el-table-column label="实付金额" width="120" align="right"><template #default="{ row }"><span class="biz-money">{{ formatMoney(row.paidAmount) }}</span></template></el-table-column>
-        <el-table-column prop="payType" label="支付方式" width="105" align="center"><template #default="{ row }">{{ row.payType || '-' }}</template></el-table-column>
         <el-table-column label="状态" width="95" align="center"><template #default="{ row }"><span class="biz-status" :class="statusTone(row.status)">{{ row.status || '-' }}</span></template></el-table-column>
         <el-table-column label="操作" width="90" fixed="right" align="center"><template #default="{ row }"><el-button link type="primary" @click.stop="showDetail(row)">详情</el-button></template></el-table-column>
       </el-table>
