@@ -25,6 +25,7 @@ const router = createRouter({
             {path:'purchases/create',name: 'PurchaseCreate',component:()=>import('../views/purchase/PurchaseFormView.vue'),meta: { title: '新建采购单', parent: '采购管理' }},
             {path:'purchases/edit/:id',name: 'PurchaseEdit',component:()=>import('../views/purchase/PurchaseFormView.vue'),meta: { title: '编辑采购单', parent: '采购管理' }},
             {path:'purchases/:id',name: 'PurchaseDetail',component:()=>import('../views/purchase/PurchaseDetailView.vue'),meta: { title: '采购单详情', parent: '采购管理' }},
+            {path:'purchase-returns',component:()=>import('../views/purchase/PurchaseReturnListView.vue')},
 
             // 销售管理
             {path:'sales',component:()=>import('../views/sale/SaleListView.vue')},
@@ -46,6 +47,9 @@ const router = createRouter({
             {path:'statistics/products',component:()=>import('../views/statistics/ProductRankView.vue')},
             {path:'statistics/profit',component:()=>import('../views/statistics/ProfitStatisticsView.vue')},
             {path:'statistics/inventory',component:()=>import('../views/statistics/InventoryStatisticsView.vue')},
+            {path:'statistics/product-profit-rank',component:()=>import('../views/statistics/ProductProfitRankView.vue')},
+            {path:'statistics/inventory-turnover',component:()=>import('../views/statistics/InventoryTurnoverView.vue')},
+            {path:'statistics/daily-settlement',component:()=>import('../views/statistics/DailySettlementView.vue')},
         ]}
     ]
 })
@@ -71,7 +75,7 @@ router.beforeEach((to,_from,next)=>{
         try{ roleName=JSON.parse(localStorage.getItem('userInfo')||'{}').roleName||'' }catch{}
         const allowedPrefixes:Record<string,string[]>={
             '采购员':['/dashboard','/product','/sales','/members'],
-            '收银员':['/dashboard','/product','/purchases','/inventory'],
+            '收银员':['/dashboard','/product','/purchases','/purchase-returns','/inventory'],
         }
         const allowed=allowedPrefixes[roleName]
         if(allowed&&!allowed.some(prefix=>to.path===prefix||to.path.startsWith(`${prefix}/`))){

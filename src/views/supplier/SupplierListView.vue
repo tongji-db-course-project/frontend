@@ -34,7 +34,7 @@
         <el-table-column label="最小起订量" width="110" align="right"><template #default="{ row }">{{ formatQuantity(row.minOrderQty) }}</template></el-table-column>
         <el-table-column label="银行账号" min-width="180"><template #default="{ row }"><span>{{ maskBankAccount(row.bankAccount) }}</span><small class="biz-muted" style="display:block">{{ row.bankName || '-' }}</small></template></el-table-column>
         <el-table-column label="状态" width="90" align="center"><template #default="{ row }"><span class="biz-status" :class="row.status === '启用' ? 'green' : 'gray'">{{ row.status }}</span></template></el-table-column>
-        <el-table-column label="操作" width="190" fixed="right" align="center"><template #default="{ row }"><el-button link type="primary" @click="openDetail(row)">详情</el-button><el-button link type="primary" @click="openForm(row)">编辑</el-button><el-button link :type="row.status === '启用' ? 'danger' : 'success'" @click="toggleStatus(row)">{{ row.status === '启用' ? '禁用' : '启用' }}</el-button></template></el-table-column>
+        <el-table-column label="操作" width="235" fixed="right" align="center"><template #default="{ row }"><el-button link type="primary" @click="openDetail(row)">详情</el-button><el-button link type="primary" @click="openPerformance(row)">表现</el-button><el-button link type="primary" @click="openForm(row)">编辑</el-button><el-button link :type="row.status === '启用' ? 'danger' : 'success'" @click="toggleStatus(row)">{{ row.status === '启用' ? '禁用' : '启用' }}</el-button></template></el-table-column>
       </el-table>
       <div class="biz-pagination"><el-pagination background layout="total, sizes, prev, pager, next, jumper" :total="total" v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10,20,50]" @change="load" /></div>
     </section>
@@ -64,6 +64,7 @@
         <dl class="biz-detail-grid"><div><dt>联系人</dt><dd>{{ selected.contactName || '-' }}</dd></div><div><dt>联系电话</dt><dd>{{ selected.phone || '-' }}</dd></div><div><dt>邮箱</dt><dd>{{ selected.email || '-' }}</dd></div><div><dt>信用等级</dt><dd>{{ selected.creditLevel || '-' }}</dd></div><div><dt>结算周期</dt><dd>{{ selected.paymentCycle ?? 0 }} 天</dd></div><div><dt>最小起订量</dt><dd>{{ selected.minOrderQty ?? 0 }}</dd></div><div><dt>开户银行</dt><dd>{{ selected.bankName || '-' }}</dd></div><div><dt>银行账号</dt><dd>{{ selected.bankAccount || '-' }}</dd></div><div style="grid-column:1/-1"><dt>地址</dt><dd>{{ selected.address || '-' }}</dd></div></dl>
       </div>
     </el-drawer>
+    <el-dialog v-model="performanceVisible" title="供应商表现分析" width="600px"><div v-loading="performanceLoading" v-if="performance"><section class="biz-stats"><StatCard label="已入库订单" :value="performance.stockedOrderCount" :icon="OfficeBuilding"/><StatCard label="采购退货单" :value="performance.returnedOrderCount" :icon="CircleCloseFilled" tone="red"/></section><el-descriptions :column="2" border><el-descriptions-item label="供应商">{{performance.supplierName}}</el-descriptions-item><el-descriptions-item label="自动信誉等级"><el-tag>{{performance.creditLevel}}</el-tag></el-descriptions-item><el-descriptions-item label="按时入库率">{{formatRate(performance.onTimeRate)}}</el-descriptions-item><el-descriptions-item label="采购退货率">{{formatRate(performance.returnRate)}}</el-descriptions-item></el-descriptions></div><template #footer><el-button @click="performanceVisible=false">关闭</el-button><el-button type="primary" :loading="performanceLoading" @click="refreshPerformance">重新计算并更新等级</el-button></template></el-dialog>
   </div>
 </template>
 
@@ -74,12 +75,14 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import PageHeader from '../../components/PageHeader.vue'
 import StatCard from '../../components/StatCard.vue'
 import { supplierApi } from '../../api/supplier'
-import type { Supplier, SupplierPayload, SupplierQuery } from '../../types/supplier'
+import type { Supplier, SupplierPayload, SupplierPerformance, SupplierQuery } from '../../types/supplier'
 import { formatQuantity, maskBankAccount, maskPhone } from '../../utils/format'
 
 const suppliers = ref<Supplier[]>([])
 const loading = ref(false), saving = ref(false), detailLoading = ref(false)
 const formVisible = ref(false), detailVisible = ref(false)
+const performanceVisible = ref(false), performanceLoading = ref(false)
+const performance = ref<SupplierPerformance | null>(null), performanceSupplierId = ref<number | null>(null)
 const total = ref(0), editingId = ref<number | null>(null), selected = ref<Supplier | null>(null)
 const query = reactive<SupplierQuery>({ page: 1, size: 10, keyword: '', creditLevel: '', status: '' })
 const emptyForm = (): SupplierPayload => ({ supplierName: '', contactName: '', phone: '', email: '', address: '', creditLevel: 'A', paymentCycle: 30, minOrderQty: 0, bankName: '', bankAccount: '', status: '启用' })
@@ -102,5 +105,9 @@ async function openForm(item?: Supplier) { editingId.value = item?.supplierId ??
 async function save() { if (!await formRef.value?.validate()) return; saving.value = true; try { if (editingId.value) await supplierApi.update(editingId.value, { ...form }); else await supplierApi.create({ ...form }); ElMessage.success(editingId.value ? '供应商修改成功' : '供应商新增成功'); formVisible.value = false; await load() } finally { saving.value = false } }
 async function toggleStatus(item: Supplier) { const next = item.status === '启用' ? '禁用' : '启用'; await ElMessageBox.confirm(`确认${next}供应商“${item.supplierName}”吗？`, `${next}供应商`, { type: 'warning' }); if (next === '禁用') await supplierApi.remove(item.supplierId); else await supplierApi.update(item.supplierId, { ...item, status: next }); ElMessage.success(`供应商已${next}`); await load() }
 async function openDetail(item: Supplier) { detailVisible.value = true; detailLoading.value = true; try { selected.value = await supplierApi.getDetail(item.supplierId) } finally { detailLoading.value = false } }
+const formatRate = (value: number) => `${(Number(value || 0) * 100).toFixed(2)}%`
+async function openPerformance(item: Supplier) { performanceSupplierId.value = item.supplierId; performanceVisible.value = true; await loadPerformance(false) }
+async function loadPerformance(update: boolean) { if (!performanceSupplierId.value) return; performanceLoading.value = true; try { performance.value = await supplierApi.getPerformance(performanceSupplierId.value, update); if (update) { ElMessage.success('信誉等级已重新计算'); await load() } } finally { performanceLoading.value = false } }
+async function refreshPerformance() { await loadPerformance(true) }
 onMounted(load)
 </script>

@@ -23,3 +23,13 @@ export interface SupplierQuery extends PageQuery {
 }
 
 export type SupplierPayload = Omit<Supplier, 'supplierId'>
+
+export interface SupplierPerformance {
+  supplierId: number
+  supplierName: string
+  stockedOrderCount: number
+  returnedOrderCount: number
+  returnRate: number
+  onTimeRate: number
+  creditLevel: string
+}

@@ -6,6 +6,9 @@ import type {
   MemberStatistics,
   ProductRankItem,
   ProfitStatistics,
+  ProductProfitRank,
+  InventoryTurnover,
+  DailySettlement,
 } from '../types/statistics'
 
 export const statisticsApi = {
@@ -23,5 +26,17 @@ export const statisticsApi = {
   },
   getMemberStatistics(params?: DateRangeQuery) {
     return request.get<unknown, MemberStatistics>('/statistics/members', { params })
+  },
+  getProductProfitRank(params: Required<DateRangeQuery>) {
+    return request.get<unknown, ProductProfitRank[]>('/statistics/products/profit-rank', { params })
+  },
+  getInventoryTurnover(params: Required<DateRangeQuery>) {
+    return request.get<unknown, InventoryTurnover[]>('/statistics/inventory/turnover', { params })
+  },
+  getDailySettlement(date: string) {
+    return request.get<unknown, DailySettlement>(`/statistics/daily-settlements/${date}`)
+  },
+  generateDailySettlement(date: string) {
+    return request.post<unknown, DailySettlement>(`/statistics/daily-settlements/${date}`)
   },
 }

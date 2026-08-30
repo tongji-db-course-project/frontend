@@ -2,6 +2,13 @@
   <div class="biz-page">
     <PageHeader eyebrow="销售管理 · 售后详情" :title="detail?.returnNo || '退货单详情'" description="查看原销售单、退款金额和退货商品">
       <el-button :icon="ArrowLeft" @click="router.push('/returns')">返回列表</el-button>
+      <el-button
+        v-if="detail?.status === '待处理'"
+        type="primary"
+        :icon="CircleCheck"
+        :loading="confirming"
+        @click="confirmReturn"
+      >确认退货</el-button>
     </PageHeader>
     <div v-loading="loading">
       <template v-if="detail">
@@ -21,7 +28,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ArrowLeft, Box, Goods, Money, RefreshLeft } from '@element-plus/icons-vue'
+import { ArrowLeft, Box, CircleCheck, Goods, Money, RefreshLeft } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../../components/PageHeader.vue'
 import StatCard from '../../components/StatCard.vue'
@@ -30,8 +38,28 @@ import type { ReturnDetail } from '../../types/return'
 import { formatDateTime, formatMoney } from '../../utils/format'
 
 const route = useRoute(), router = useRouter(), returnId = Number(route.params.id)
-const detail = ref<ReturnDetail | null>(null), loading = ref(false)
+const detail = ref<ReturnDetail | null>(null), loading = ref(false), confirming = ref(false)
 const itemQuantity = computed(() => detail.value?.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0)
 async function load() { if (!Number.isFinite(returnId)) return; loading.value = true; try { detail.value = await returnApi.getDetail(returnId) } catch { detail.value = null } finally { loading.value = false } }
+async function confirmReturn() {
+  if (!detail.value || detail.value.status !== '待处理' || confirming.value) return
+  try {
+    await ElMessageBox.confirm(
+      `确认办理退货单“${detail.value.returnNo}”吗？确认后将执行退款、库存回补及相关积分调整。`,
+      '确认退货',
+      { type: 'warning', confirmButtonText: '确认退货', cancelButtonText: '取消' },
+    )
+  } catch {
+    return
+  }
+  confirming.value = true
+  try {
+    await returnApi.confirm(returnId)
+    ElMessage.success('退货已确认')
+    await load()
+  } finally {
+    confirming.value = false
+  }
+}
 onMounted(load)
 </script>
