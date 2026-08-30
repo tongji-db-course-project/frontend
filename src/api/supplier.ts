@@ -1,6 +1,6 @@
 import request from '../utils/request'
 import type { PageResult } from '../types/common'
-import type { Supplier, SupplierPayload, SupplierQuery } from '../types/supplier'
+import type { Supplier, SupplierPayload, SupplierPerformance, SupplierQuery } from '../types/supplier'
 
 type RawSupplier = Partial<Supplier> & {
   contactPerson?: string | null
@@ -54,5 +54,8 @@ export const supplierApi = {
   },
   remove(supplierId: number) {
     return request.delete<unknown, null>(`/suppliers/${supplierId}`)
+  },
+  getPerformance(supplierId: number, updateCreditLevel = false) {
+    return request.get<unknown, SupplierPerformance>(`/suppliers/${supplierId}/performance`, { params: { updateCreditLevel } })
   },
 }

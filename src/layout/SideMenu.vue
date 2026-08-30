@@ -84,6 +84,7 @@ const menuItems = [
     name: '采购管理', icon: Box,
     children: [
       { name: '采购单列表', path: '/purchases' },
+      { name: '采购退货管理', path: '/purchase-returns' },
     ],
   },
   {
@@ -115,6 +116,9 @@ const menuItems = [
       { name: '商品排行', path: '/statistics/products' },
       { name: '毛利分析', path: '/statistics/profit' },
       { name: '库存分析', path: '/statistics/inventory' },
+      { name: '商品毛利排行', path: '/statistics/product-profit-rank' },
+      { name: '库存周转率', path: '/statistics/inventory-turnover' },
+      { name: '每日营业结转', path: '/statistics/daily-settlement' },
     ],
   },
   {
@@ -135,7 +139,7 @@ const menuItems = [
 
 const rolePaths = {
   采购员: ['/dashboard', '/product', '/sales', '/sales/checkout', '/members'],
-  收银员: ['/dashboard', '/product', '/purchases', '/purchases/create', '/inventory', '/inventory/records'],
+  收银员: ['/dashboard', '/product', '/purchases', '/purchases/create', '/purchase-returns', '/inventory', '/inventory/records'],
 }
 
 const visibleMenuItems = computed(() => {

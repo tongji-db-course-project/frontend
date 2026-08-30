@@ -57,3 +57,42 @@ export interface MemberStatistics {
   memberSaleAmount: number
   averageSaleAmount: number
 }
+
+export interface ProductProfitRank {
+  productId: number
+  productName: string
+  netSaleQuantity: number
+  netSaleAmount: number
+  purchaseCost: number
+  grossProfit: number
+  grossProfitRate: number
+  profitContributionRate: number
+}
+
+export interface InventoryTurnover {
+  productId: number
+  productName: string
+  soldQuantity: number
+  beginningStock: number
+  endingStock: number
+  averageStock: number
+  turnoverTimes: number
+  stagnant: boolean
+}
+
+export interface DailySettlement {
+  settlementId: number
+  settlementDate: string
+  totalSales: number
+  cashAmount: number
+  wechatAmount: number
+  alipayAmount: number
+  promotionDiscount: number
+  memberDiscount: number
+  couponDeduct: number
+  pointDeduct: number
+  pointConsumed: number
+  orderCount: number
+  status: string
+  createTime?: string | null
+}
