@@ -48,4 +48,11 @@ export const roleApi = {
 
     return request.delete<null, null>(`/roles/${roleId}`)
   },
+  /** 待后端补齐查询接口；保存接口后端当前已有时可直接复用。 */
+  getMenuIds(roleId: number) {
+    return request.get<unknown, number[]>(`/roles/${roleId}/menus`)
+  },
+  updateMenus(roleId: number, menuIds: number[]) {
+    return request.put<unknown, null>(`/roles/${roleId}/menus`, { menuIds })
+  },
 }

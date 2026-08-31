@@ -22,7 +22,7 @@
         <el-table-column label="预警值" width="110" align="right"><template #default="{ row }">{{ row.stockWarning == null ? '-' : formatQuantity(row.stockWarning, row.unit || '') }}</template></el-table-column>
         <el-table-column label="库存状态" width="100" align="center"><template #default="{ row }"><span class="biz-status" :class="statusTone(statusOf(row))">{{ statusOf(row) }}</span></template></el-table-column>
         <el-table-column label="最后更新" width="170"><template #default="{ row }">{{ formatDateTime(row.lastUpdateTime) }}</template></el-table-column>
-        <el-table-column v-if="canCount" label="操作" width="100" fixed="right"><template #default="{row}"><el-button link type="primary" @click="openCount(row)">库存盘点</el-button></template></el-table-column>
+        <el-table-column label="操作" width="180" fixed="right"><template #default="{row}"><el-button v-if="statusOf(row)!=='正常'" link type="warning" @click="createPurchase(row)">发起采购</el-button><el-button v-if="canCount" link type="primary" @click="openCount(row)">库存盘点</el-button></template></el-table-column>
       </el-table>
       <div class="biz-pagination"><el-pagination background layout="total, sizes, prev, pager, next, jumper" :total="total" v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10,20,50]" @change="load" /></div>
     </section>
@@ -32,6 +32,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { Box, CircleCloseFilled, GoodsFilled, Search, WarningFilled } from '@element-plus/icons-vue'
 import PageHeader from '../../components/PageHeader.vue'
 import StatCard from '../../components/StatCard.vue'
@@ -42,6 +43,7 @@ import type { InventoryItem, InventoryQuery, InventoryStatus, Warehouse } from '
 import { formatDateTime, formatQuantity } from '../../utils/format'
 
 const items = ref<InventoryItem[]>([]), warehouses = ref<Warehouse[]>([])
+const router = useRouter()
 const loading = ref(false), total = ref(0)
 const auth=useAuthStore(),canCount=computed(()=>(auth.userInfo?.roleName||auth.roleName)==='管理员')
 const countVisible=ref(false),counting=ref(false),countTarget=ref<InventoryItem|null>(null),actualStock=ref(0),countRemark=ref('')
@@ -52,6 +54,7 @@ const statusTone = (status: InventoryStatus) => status === '正常' ? 'green' : 
 const stockTotal = computed(() => items.value.reduce((sum, item) => sum + item.currentStock, 0))
 const warningCount = computed(() => items.value.filter(item => statusOf(item) === '预警').length)
 const outOfStockCount = computed(() => items.value.filter(item => statusOf(item) === '缺货').length)
+function createPurchase(item: InventoryItem) { router.push({ path: '/purchases/create', query: { productId: String(item.productId), source: 'inventory-warning' } }) }
 async function load() { loading.value = true; try { const params = { ...query, keyword: query.keyword || undefined, warehouseId: query.warehouseId || undefined }; const result = query.warningOnly ? await inventoryApi.getWarningList(params) : await inventoryApi.getList(params); items.value = result?.list ?? []; total.value = result?.total ?? 0 } catch { items.value = []; total.value = 0 } finally { loading.value = false } }
 async function loadWarehouses() { try { warehouses.value = await inventoryApi.getWarehouses() ?? [] } catch { warehouses.value = [] } }
 function search() { query.page = 1; load() }

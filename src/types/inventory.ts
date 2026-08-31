@@ -51,3 +51,20 @@ export interface InventoryRecordQuery extends PageQuery {
   startDate?: string
   endDate?: string
 }
+
+export interface PurchaseSuggestion {
+  productId: number
+  productName: string
+  supplierId: number
+  supplierName?: string | null
+  currentStock: number
+  stockWarning: number
+  suggestedQuantity: number
+}
+
+export interface InventoryCountTask {
+  countId: number
+  countNo: string
+  status: '盘点中' | '待确认' | '已完成' | '已取消'
+  createTime: string
+}
