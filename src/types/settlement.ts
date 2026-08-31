@@ -9,10 +9,22 @@ export interface SupplierSettlement {
   purchaseId: number
   purchaseNo?: string
   settlementDate?: string | null
+  dueDate?: string | null
+  overdueDays?: number | null
+  prepaidAmount?: number | null
   settlementAmount: number
   paidAmount?: number | null
   unpaidAmount: number
   status: SettlementStatus
+  remark?: string | null
+}
+
+export interface SettlementPayment {
+  paymentId: number
+  settlementId: number
+  paidAmount: number
+  paymentTime: string
+  operatorName?: string | null
   remark?: string | null
 }
 

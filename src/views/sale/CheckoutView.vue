@@ -27,13 +27,13 @@
         </div>
         <div class="member-box">
           <el-input v-model="memberPhone" placeholder="输入会员手机号" clearable><template #append><el-button :icon="Search" :loading="memberLoading" @click="findMember" /></template></el-input>
-          <p v-if="member"><el-tag type="success">普通会员</el-tag><b>{{ member.memberName }}</b><span>{{ member.phone }} · {{ member.points ?? 0 }} 积分</span><el-button link type="danger" @click="removeMember">移除</el-button></p>
+          <p v-if="member"><el-tag type="success">{{ member.levelName || '普通会员' }}</el-tag><b>{{ member.memberName }}</b><span>{{ member.phone }} · {{ member.points ?? 0 }} 积分</span><el-button link type="danger" @click="removeMember">移除</el-button></p>
         </div>
         <div class="checkout-options">
           <label>出库仓库</label><el-input-number v-model="warehouseId" :min="1" :precision="0" controls-position="right" />
           <label>兑换积分</label><el-input-number v-model="redeemPoints" :min="0" :max="member?.points ?? 0" :precision="0" :disabled="!member" />
         </div>
-        <el-alert title="商品价格、库存扣减、积分兑换和最终实付金额由后端结算。" type="info" :closable="false" show-icon />
+        <el-alert title="支付方式：会员卡扣款。商品价格、优惠、积分和最终实付金额由后端统一结算。" type="info" :closable="false" show-icon />
         <dl class="checkout-total"><div><dt>商品金额</dt><dd>{{ formatMoney(totalAmount) }}</dd></div><div class="grand"><dt>预计金额</dt><dd>{{ formatMoney(totalAmount) }}</dd></div></dl>
         <el-button size="large" type="primary" :loading="submitting" :disabled="!cart.length" @click="checkout">确认收款</el-button>
       </section>
@@ -107,6 +107,8 @@ async function findMember() {
 
 async function checkout() {
   if (!cart.value.length) return
+  if (!member.value) { ElMessage.warning('会员卡支付需要先查询并选择会员'); return }
+  await ElMessageBox.confirm(`确认从 ${member.value.memberName} 的会员卡完成本次扣款吗？`, '确认收款', { type: 'warning', confirmButtonText: '确认扣款' })
   submitting.value = true
   try {
     lastSale.value = await saleApi.create({

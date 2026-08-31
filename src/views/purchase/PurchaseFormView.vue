@@ -139,6 +139,22 @@ const selectProduct = (row: PurchaseFormDto['details'][number]) => {
   if (!(row.purchasePrice > 0)) row.purchasePrice = Number(product.purchasePrice || 0);
 };
 
+const applyInventorySuggestion = () => {
+  if (isEdit.value || route.query.source !== 'inventory-warning') return;
+  const productId = Number(route.query.productId);
+  const product = products.value.find(item => item.productId === productId);
+  if (!product) return;
+  const suggestedQuantity = Math.max(1, Number(product.stockWarning || 0) - Number(product.currentStock || 0));
+  form.supplierId = product.supplierId || form.supplierId;
+  form.details = [{
+    productId: product.productId,
+    productName: product.productName,
+    purchasePrice: Number(product.purchasePrice || 0),
+    purchaseQuantity: suggestedQuantity,
+  }];
+  ElMessage.success(`已根据库存预警带入 ${product.productName}，请确认采购数量和价格`);
+};
+
 const loadOptions = async () => {
   optionLoading.value = true;
   try {
@@ -289,6 +305,7 @@ onMounted(async () => {
     form.applicantId = currentUserId.value || null;
     form.purchaseDate = new Date().toISOString().slice(0, 10);
     addLine();
+    applyInventorySuggestion();
   }
 });
 </script>

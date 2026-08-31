@@ -47,5 +47,25 @@ export interface SaleCheckoutPayload {
   memberId?: number | null
   warehouseId: number
   redeemPoints: number
+  couponId?: number | null
   items: SaleCheckoutDetail[]
+}
+
+export interface MemberCoupon {
+  couponId: number
+  couponName: string
+  thresholdAmount: number
+  discountAmount: number
+  expireTime?: string | null
+}
+
+export interface SaleQuote {
+  originalAmount: number
+  promotionDiscount: number
+  memberDiscount: number
+  couponDiscount: number
+  pointDiscount: number
+  payableAmount: number
+  redeemPoints: number
+  itemPrices?: Array<{ productId: number; unitPrice: number; discountType?: string | null }>
 }
