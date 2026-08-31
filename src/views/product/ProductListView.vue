@@ -11,6 +11,10 @@
       <div class="toolbar">
         <label><Search /><input v-model="keyword" placeholder="搜索商品名称" /></label>
         <select v-model="status"><option value="">全部状态</option><option value="在售">在售</option><option value="停售">停售</option></select>
+        <select v-model.number="categoryId"><option :value="0">全部分类</option><option v-for="item in categories" :key="item.categoryId" :value="item.categoryId">{{ item.categoryName }}</option></select>
+        <select v-model.number="supplierId"><option :value="0">全部供应商</option><option v-for="item in suppliers" :key="item.supplierId" :value="item.supplierId">{{ item.supplierName }}</option></select>
+        <el-input-number v-model="minStock" :min="0" placeholder="最低库存" controls-position="right" />
+        <el-input-number v-model="maxStock" :min="0" placeholder="最高库存" controls-position="right" />
         <button class="query" @click="search">查询</button><button @click="reset">重置</button><span>共 {{ total }} 件商品</span>
       </div>
       <div class="table-wrap"><table><thead><tr><th>商品信息</th><th>商品编号</th><th>分类 / 供应商</th><th>销售价</th><th>当前库存</th><th>状态</th><th>操作</th></tr></thead>
@@ -65,7 +69,7 @@ import type { Supplier } from '../../types/supplier'
 const products=ref<ProductListItem[]>([])
 const authStore=useAuthStore()
 const canEdit=computed(()=>(authStore.userInfo?.roleName||authStore.roleName)!=='收银员')
-const keyword=ref(''),status=ref('')
+const keyword=ref(''),status=ref(''),categoryId=ref(0),supplierId=ref(0),minStock=ref<number|undefined>(),maxStock=ref<number|undefined>()
 const loading=ref(false),total=ref(0),page=ref(1),size=ref(10)
 const formVisible=ref(false),detailVisible=ref(false),saving=ref(false),detailLoading=ref(false)
 const editingId=ref<number|null>(null),selected=ref<Product|null>(null),formRef=ref<FormInstance>()
@@ -78,9 +82,9 @@ const enabledCount=computed(()=>products.value.filter(x=>x.status==='在售').le
 const warningTotal=computed(()=>products.value.filter(x=>x.stockWarning != null && x.currentStock < x.stockWarning).length)
 const categoryCount=computed(()=>new Set(products.value.map(x=>x.categoryId)).size)
 
-async function loadProducts(){loading.value=true;try{const result=await productApi.getList({page:page.value,size:size.value,keyword:keyword.value||undefined,status:status.value||undefined});products.value=result?.list||[];total.value=result?.total||0;page.value=result?.page||page.value;size.value=result?.size||size.value}catch{products.value=[];total.value=0}finally{loading.value=false}}
+async function loadProducts(){loading.value=true;try{const result=await productApi.getList({page:page.value,size:size.value,keyword:keyword.value||undefined,status:status.value||undefined,categoryId:categoryId.value||undefined,supplierId:supplierId.value||undefined,minStock:minStock.value,maxStock:maxStock.value});products.value=result?.list||[];total.value=result?.total||0;page.value=result?.page||page.value;size.value=result?.size||size.value}catch{products.value=[];total.value=0}finally{loading.value=false}}
 async function search(){page.value=1;loadProducts()}
-function reset(){keyword.value='';status.value='';page.value=1;loadProducts()}
+function reset(){keyword.value='';status.value='';categoryId.value=0;supplierId.value=0;minStock.value=undefined;maxStock.value=undefined;page.value=1;loadProducts()}
 function changePage(next:number){page.value=next;loadProducts()}
 async function loadOptions(){const [categoryResult,supplierResult]=await Promise.all([categoryApi.getList({page:1,size:100,status:'启用'}),supplierApi.getList({page:1,size:100,status:'启用'})]);categories.value=categoryResult?.list||[];suppliers.value=supplierResult?.list||[]}
 async function openForm(item?:ProductListItem){editingId.value=item?.productId??null;Object.assign(form,emptyForm());if(item){saving.value=true;try{Object.assign(form,await productApi.getDetail(item.productId))}finally{saving.value=false}}formVisible.value=true}

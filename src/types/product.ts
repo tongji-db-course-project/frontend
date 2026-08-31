@@ -35,7 +35,12 @@ export interface Product {
 
 export type ProductPayload = Omit<Product, 'productId'>
 
-export type ProductQuery = PageQuery
+export interface ProductQuery extends PageQuery {
+  categoryId?: number
+  supplierId?: number
+  minStock?: number
+  maxStock?: number
+}
 
 export type CategoryStatus = '启用' | '停用'
 

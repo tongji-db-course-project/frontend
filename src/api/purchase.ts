@@ -10,6 +10,7 @@ import type {
   PurchaseStockInDto,
   PurchaseStockInResult,
 } from '../types/purchase';
+import type { OrderTimelineItem } from '../types/common';
 
 const PURCHASE_ORDER_PATH = '/purchase-orders';
 const useLocalMock = import.meta.env.VITE_USE_LOCAL_MOCK === 'true';
@@ -240,6 +241,9 @@ export const purchaseApi = {
       });
     }
     return request.post<unknown, PurchaseStockInResult>(`${PURCHASE_ORDER_PATH}/${orderId}/stock-in`, data);
+  },
+  getTimeline(orderId: number) {
+    return request.get<unknown, OrderTimelineItem[]>(`${PURCHASE_ORDER_PATH}/${orderId}/timeline`);
   },
 };
 

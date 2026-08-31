@@ -24,4 +24,15 @@ export interface ApiResponse<T = any> {
   data: T;
 }
 
+export interface OrderTimelineItem {
+  logId: number
+  orderType?: string
+  orderId: number
+  oldStatus?: string | null
+  newStatus: string
+  operatorId: number
+  changeTime?: string | null
+  remark?: string | null
+}
+
 

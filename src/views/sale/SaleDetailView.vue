@@ -17,6 +17,7 @@
           <dl class="biz-detail-grid"><div><dt>销售单号</dt><dd>{{ detail.saleNo }}</dd></div><div><dt>销售时间</dt><dd>{{ formatDateTime(detail.saleDate) }}</dd></div><div><dt>会员</dt><dd>{{ detail.memberId ? `会员 #${detail.memberId}` : '散客' }}</dd></div><div><dt>收银员</dt><dd>用户 #{{ detail.userId }}</dd></div><div><dt>创建时间</dt><dd>{{ formatDateTime(detail.createTime) }}</dd></div><div><dt>最后更新</dt><dd>{{ formatDateTime(detail.updateTime) }}</dd></div></dl>
           <div class="biz-summary-row"><span>优惠<strong>-{{ formatMoney(detail.discountAmount) }}</strong></span><span>实付<strong>{{ formatMoney(detail.paidAmount) }}</strong></span></div>
         </section>
+        <section class="biz-card"><h3>状态流转</h3><el-timeline v-if="timeline.length"><el-timeline-item v-for="item in timeline" :key="item.logId" :timestamp="formatDateTime(item.changeTime)" type="success"><b>{{ item.newStatus }}</b><p>{{ item.remark || `操作人 #${item.operatorId}` }}</p></el-timeline-item></el-timeline><el-empty v-else description="暂无状态流转记录" :image-size="60" /></section>
         <section class="biz-card">
           <h3>商品明细</h3>
           <el-table v-if="detail.items?.length" :data="detail.items" border class="biz-table">
@@ -41,10 +42,12 @@ import PageHeader from '../../components/PageHeader.vue'
 import StatCard from '../../components/StatCard.vue'
 import { saleApi } from '../../api/sale'
 import type { SaleOrder } from '../../types/sale'
+import type { OrderTimelineItem } from '../../types/common'
 import { formatDateTime, formatMoney } from '../../utils/format'
 
 const route = useRoute(), router = useRouter(), saleId = Number(route.params.id)
 const detail = ref<SaleOrder | null>(null), loading = ref(false)
-async function load() { if (!Number.isFinite(saleId)) return; loading.value = true; try { detail.value = await saleApi.getDetail(saleId) } catch { detail.value = null } finally { loading.value = false } }
+const timeline = ref<OrderTimelineItem[]>([])
+async function load() { if (!Number.isFinite(saleId)) return; loading.value = true; try { [detail.value, timeline.value] = await Promise.all([saleApi.getDetail(saleId), saleApi.getTimeline(saleId)]) } catch { detail.value = null; timeline.value = [] } finally { loading.value = false } }
 onMounted(load)
 </script>

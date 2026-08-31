@@ -15,4 +15,7 @@ export const inventoryApi = {
   getWarehouses() {
     return request.get<unknown, Warehouse[]>('/warehouses')
   },
+  adjust(data: { productId: number; changeQty: number; recordType: string; remark?: string; sourceNo?: string }) {
+    return request.put<unknown, InventoryItem>('/inventory/adjust', data)
+  },
 }

@@ -55,25 +55,7 @@
       <aside class="detail-side">
         <section class="content-card">
           <div class="card-title">单据进度</div>
-          <el-timeline>
-            <el-timeline-item timestamp="已完成" type="success" size="large">创建单据</el-timeline-item>
-            <el-timeline-item
-              :timestamp="detail.status === '待审批' ? '待处理' : '已完成'"
-              :type="detail.status === '待审批' ? 'info' : 'success'"
-              :hollow="detail.status === '待审批'"
-              size="large"
-            >
-              审批处理
-            </el-timeline-item>
-            <el-timeline-item
-              :timestamp="detail.status === '已入库' ? '已完成' : '等待中'"
-              :type="detail.status === '已入库' ? 'success' : 'info'"
-              :hollow="detail.status !== '已入库'"
-              size="large"
-            >
-              入库完成
-            </el-timeline-item>
-          </el-timeline>
+          <el-timeline v-if="timeline.length"><el-timeline-item v-for="item in timeline" :key="item.logId" :timestamp="item.changeTime || '-'" type="success"><b>{{ item.newStatus }}</b><p>{{ item.remark || `操作人 #${item.operatorId}` }}</p></el-timeline-item></el-timeline><el-empty v-else description="暂无状态流转记录" :image-size="60" />
         </section>
       </aside>
     </div>
@@ -87,13 +69,19 @@ import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { purchaseApi } from '../../api/purchase';
+import { inventoryApi } from '../../api/inventory';
+import { useAuthStore } from '../../stores/auth';
 import { canApproveOrStockIn, canCancelPurchaseBeforeApproval, canEditPurchaseBeforeApproval } from '../../utils/purchasePermissions';
 import type { PurchaseOrder } from '../../types/purchase';
+import type { OrderTimelineItem } from '../../types/common';
 
 const route = useRoute();
 const router = useRouter();
 const detail = ref<PurchaseOrder | null>(null);
 const loading = ref(false);
+const timeline = ref<OrderTimelineItem[]>([]);
+const authStore = useAuthStore();
+const currentUserId = () => Number(authStore.userInfo?.userId || 0);
 const canApproveOrReject = computed(() => canApproveOrStockIn());
 const canStockIn = computed(() => canApproveOrStockIn());
 const canEditPurchase = (status?: string) => canEditPurchaseBeforeApproval(status);
@@ -106,7 +94,7 @@ const approveOrder = async () => {
     return;
   }
   try {
-    await purchaseApi.approve(detail.value.orderId, { approverId: 1, remark: '审批通过' });
+    await purchaseApi.approve(detail.value.orderId, { approverId: currentUserId(), remark: '审批通过' });
     detail.value = { ...detail.value, status: '已审批' };
     ElMessage.success('审批通过成功');
   } catch (error) {
@@ -122,7 +110,7 @@ const rejectOrder = async () => {
       ElMessage.warning('只有店长、管理员、库存管理员可以驳回采购单');
       return;
     }
-    await purchaseApi.reject(detail.value.orderId, { approverId: 1, remark: '审批驳回' });
+    await purchaseApi.reject(detail.value.orderId, { approverId: currentUserId(), remark: '审批驳回' });
     detail.value = { ...detail.value, status: '已驳回' };
     ElMessage.success('驳回成功');
   } catch (error) {
@@ -138,9 +126,12 @@ const stockInOrder = async () => {
       ElMessage.warning('只有店长、管理员、库存管理员可以进行采购入库');
       return;
     }
+    const warehouses = await inventoryApi.getWarehouses();
+    const warehouse = warehouses?.find(item => item.status !== '禁用');
+    if (!warehouse) { ElMessage.warning('没有可用仓库，无法入库'); return; }
     await purchaseApi.stockIn(detail.value.orderId, {
-      operatorId: 1,
-      warehouseId: 1,
+      operatorId: currentUserId(),
+      warehouseId: warehouse.warehouseId,
       stockInDate: new Date().toISOString().split('T')[0],
       details: (detail.value.details || []).map((item) => ({
         productId: item.productId,
@@ -186,8 +177,10 @@ const unwrapResponse = <T>(res: any): T | null => {
 onMounted(async () => {
   loading.value = true;
   try {
-    const res = await purchaseApi.getDetail(Number(route.params.id));
+    const orderId = Number(route.params.id);
+    const [res, logs] = await Promise.all([purchaseApi.getDetail(orderId), purchaseApi.getTimeline(orderId)]);
     detail.value = unwrapResponse<PurchaseOrder>(res) || null;
+    timeline.value = logs || [];
     if (detail.value && detail.value.status !== '待审批' && route.name === 'PurchaseEdit') {
       ElMessage.warning('只有待审批采购单可以编辑');
       router.replace(`/purchases/${detail.value.orderId}`);
