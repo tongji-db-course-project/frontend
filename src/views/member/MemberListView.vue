@@ -63,8 +63,8 @@
               <td class="actions">
                 <button @click="showDetail(member)">详情/轨迹</button>
                 <button @click="openEdit(member)">编辑</button>
-                <el-popconfirm title="确认删除该会员吗？" width="220" @confirm="removeMember(member)">
-                  <template #reference><button class="danger">删除</button></template>
+                <el-popconfirm v-if="member.status === '启用'" title="确认禁用该会员吗？" width="220" @confirm="disableMember(member)">
+                  <template #reference><button class="danger">禁用</button></template>
                 </el-popconfirm>
               </td>
             </tr>
@@ -270,9 +270,9 @@ async function saveMember() {
   }
 }
 
-async function removeMember(member: Member) {
+async function disableMember(member: Member) {
   await memberApi.remove(member.memberId)
-  ElMessage.success('会员已删除')
+  ElMessage.success('会员已禁用')
   if (members.value.length === 1 && query.page > 1) query.page -= 1
   await loadMembers()
 }

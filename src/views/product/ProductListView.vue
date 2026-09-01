@@ -22,7 +22,7 @@
           <td><div class="item-info"><i>{{ item.productName?.slice(0,1) || '?' }}</i><div><b>{{ item.productName }}</b><small>{{ item.barcode || '无条码' }} · {{ item.specification || '暂无规格' }}</small></div></div></td>
           <td><code>#{{ item.productId }}</code></td><td><b>{{ item.categoryName || `分类 #${item.categoryId}` }}</b><small class="block">{{ item.supplierName || `供应商 #${item.supplierId}` }}</small></td><td><b>¥ {{ Number(item.salePrice || 0).toFixed(2) }}</b></td><td>{{ item.currentStock }} {{ item.unit || '' }}</td>
           <td><span class="status" :class="{off:item.status!=='在售'}"><i />{{ item.status || '未知' }}</span></td>
-          <td class="actions"><button @click="openDetail(item)">查看</button><button v-if="canEdit" @click="openForm(item)">编辑</button><button v-if="canEdit" class="danger" @click="removeProduct(item)">删除</button></td>
+          <td class="actions"><button @click="openDetail(item)">查看</button><button v-if="canEdit" @click="openForm(item)">编辑</button><button v-if="canEdit && item.status === '在售'" class="danger" @click="stopProduct(item)">停售</button></td>
         </tr></tbody></table></div>
       <div v-if="!loading && products.length===0" class="empty-state">暂无商品数据</div>
       <footer><span>第 {{ page }} 页，每页 {{ size }} 条</span><div><button :disabled="page<=1" @click="changePage(page-1)">‹</button><button class="active">{{ page }}</button><button :disabled="page*size>=total" @click="changePage(page+1)">›</button></div></footer>
@@ -51,6 +51,7 @@
         <div><dt>分类</dt><dd>{{ categoryName(selected.categoryId) }}</dd></div><div><dt>供应商</dt><dd>{{ supplierName(selected.supplierId) }}</dd></div>
         <div><dt>规格 / 单位</dt><dd>{{ selected.specification || '-' }} / {{ selected.unit || '-' }}</dd></div><div><dt>采购价</dt><dd>¥ {{ Number(selected.purchasePrice).toFixed(2) }}</dd></div>
         <div><dt>销售价</dt><dd>¥ {{ Number(selected.salePrice).toFixed(2) }}</dd></div><div><dt>库存预警</dt><dd>{{ selected.stockWarning }}</dd></div><div><dt>状态</dt><dd>{{ selected.status }}</dd></div>
+        <div><dt>促销商品</dt><dd>{{ selected.isPromotion || '否' }}</dd></div><div><dt>促销价</dt><dd>{{ selected.isPromotion === '是' && selected.promotionPrice != null ? `¥ ${Number(selected.promotionPrice).toFixed(2)}` : '-' }}</dd></div>
       </dl></div>
     </el-drawer>
   </div>
@@ -90,7 +91,7 @@ async function loadOptions(){const [categoryResult,supplierResult]=await Promise
 async function openForm(item?:ProductListItem){editingId.value=item?.productId??null;Object.assign(form,emptyForm());if(item){saving.value=true;try{Object.assign(form,await productApi.getDetail(item.productId))}finally{saving.value=false}}formVisible.value=true}
 async function saveProduct(){if(!await formRef.value?.validate().catch(()=>false))return;saving.value=true;try{if(editingId.value)await productApi.update(editingId.value,{...form});else await productApi.create({...form});ElMessage.success(editingId.value?'商品已更新':'商品已新增');formVisible.value=false;await loadProducts()}finally{saving.value=false}}
 async function openDetail(item:ProductListItem){detailVisible.value=true;detailLoading.value=true;selected.value=null;try{selected.value=await productApi.getDetail(item.productId)}finally{detailLoading.value=false}}
-async function removeProduct(item:ProductListItem){await ElMessageBox.confirm(`确认删除商品“${item.productName}”吗？`,'删除商品',{type:'warning'});await productApi.remove(item.productId);ElMessage.success('商品已删除');await loadProducts()}
+async function stopProduct(item:ProductListItem){await ElMessageBox.confirm(`确认将商品“${item.productName}”设为停售吗？`,'停售商品',{type:'warning'});await productApi.remove(item.productId);ElMessage.success('商品已停售');await loadProducts()}
 const categoryName=(id:number)=>categories.value.find(x=>x.categoryId===id)?.categoryName||`分类 #${id}`
 const supplierName=(id:number)=>suppliers.value.find(x=>x.supplierId===id)?.supplierName||`供应商 #${id}`
 
