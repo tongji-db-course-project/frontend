@@ -31,7 +31,11 @@ const normalizeSupplier = (item: RawSupplier): Supplier => ({
 
 const toSupplierRequest = (data: SupplierPayload) => {
   const { contactName, ...rest } = data
-  return { ...rest, contactPerson: contactName }
+  return {
+    ...rest,
+    email: data.email?.trim() || null,
+    contactPerson: contactName,
+  }
 }
 
 export const supplierApi = {
