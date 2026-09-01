@@ -58,6 +58,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { normalizeRoleName } from '../utils/roles'
 import {
   Box, Coin, DataAnalysis, Goods, HomeFilled, List, Setting,
   ShoppingCart, Search, User,
@@ -138,12 +139,12 @@ const menuItems = [
 ]
 
 const rolePaths = {
-  采购员: ['/dashboard', '/product', '/sales', '/sales/checkout', '/members'],
+  采购员: ['/dashboard', '/product', '/sales', '/sales/checkout', '/returns', '/members'],
   收银员: ['/dashboard', '/product', '/purchases', '/purchases/create', '/purchase-returns', '/inventory', '/inventory/records'],
 }
 
 const visibleMenuItems = computed(() => {
-  const roleName = authStore.userInfo?.roleName || authStore.roleName
+  const roleName = normalizeRoleName(authStore.userInfo?.roleName || authStore.roleName)
   const allowed = rolePaths[roleName]
   if (!allowed) return menuItems
   return menuItems.flatMap(item => {
