@@ -46,6 +46,7 @@ export interface SaleQuery extends PageQuery {
 export interface SaleCheckoutPayload {
   memberId?: number | null
   warehouseId: number
+  payType: '会员卡' | string
   redeemPoints: number
   couponId?: number | null
   items: SaleCheckoutDetail[]

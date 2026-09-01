@@ -30,7 +30,7 @@
           <p v-if="member"><el-tag type="success">{{ member.levelName || '普通会员' }}</el-tag><b>{{ member.memberName }}</b><span>{{ member.phone }} · {{ member.points ?? 0 }} 积分</span><el-button link type="danger" @click="removeMember">移除</el-button></p>
         </div>
         <div class="checkout-options">
-          <label>出库仓库</label><el-input-number v-model="warehouseId" :min="1" :precision="0" controls-position="right" />
+          <label>出库仓库</label><el-select v-model="warehouseId" placeholder="请选择仓库" :loading="warehouseLoading"><el-option v-for="item in warehouses" :key="item.warehouseId" :label="item.warehouseName" :value="item.warehouseId" /></el-select>
           <label>兑换积分</label><el-input-number v-model="redeemPoints" :min="0" :max="member?.points ?? 0" :precision="0" :disabled="!member" />
         </div>
         <el-alert title="支付方式：会员卡扣款。商品价格、优惠、积分和最终实付金额由后端统一结算。" type="info" :closable="false" show-icon />
@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { Delete, Search, ShoppingCart } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
@@ -51,9 +51,11 @@ import PageHeader from '../../components/PageHeader.vue'
 import { productApi } from '../../api/product'
 import { memberApi } from '../../api/member'
 import { saleApi } from '../../api/sale'
+import { inventoryApi } from '../../api/inventory'
 import type { ProductListItem } from '../../types/product'
 import type { Member } from '../../types/member'
 import type { SaleOrder } from '../../types/sale'
+import type { Warehouse } from '../../types/inventory'
 import { formatMoney } from '../../utils/format'
 
 type CheckoutProduct = ProductListItem
@@ -67,7 +69,9 @@ const cart = ref<CartItem[]>([])
 const memberPhone = ref('')
 const member = ref<Member | null>(null)
 const memberLoading = ref(false)
-const warehouseId = ref(1)
+const warehouseId = ref<number | null>(null)
+const warehouses = ref<Warehouse[]>([])
+const warehouseLoading = ref(false)
 const redeemPoints = ref(0)
 const submitting = ref(false)
 const lastSale = ref<SaleOrder | null>(null)
@@ -105,15 +109,26 @@ async function findMember() {
   finally { memberLoading.value = false }
 }
 
+async function loadWarehouses() {
+  warehouseLoading.value = true
+  try {
+    warehouses.value = (await inventoryApi.getWarehouses() ?? []).filter(item => item.status !== '禁用')
+    if (warehouses.value.length === 1) warehouseId.value = warehouses.value[0]?.warehouseId ?? null
+  } catch { warehouses.value = [] }
+  finally { warehouseLoading.value = false }
+}
+
 async function checkout() {
   if (!cart.value.length) return
   if (!member.value) { ElMessage.warning('会员卡支付需要先查询并选择会员'); return }
+  if (!warehouseId.value) { ElMessage.warning('请选择出库仓库'); return }
   await ElMessageBox.confirm(`确认从 ${member.value.memberName} 的会员卡完成本次扣款吗？`, '确认收款', { type: 'warning', confirmButtonText: '确认扣款' })
   submitting.value = true
   try {
     lastSale.value = await saleApi.create({
       memberId: member.value?.memberId,
       warehouseId: warehouseId.value,
+      payType: '会员卡',
       redeemPoints: redeemPoints.value,
       items: cart.value.map(item => ({ productId: item.product.productId, quantity: item.quantity })),
     })
@@ -121,6 +136,8 @@ async function checkout() {
     ElMessage.success('收款成功')
   } finally { submitting.value = false }
 }
+
+onMounted(loadWarehouses)
 </script>
 
 <style scoped>

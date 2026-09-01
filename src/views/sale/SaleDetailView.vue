@@ -4,6 +4,7 @@
       <el-button v-if="detail?.status === '已完成'" type="primary" :icon="RefreshLeft" @click="router.push({ path: '/returns', query: { saleId } })">发起退货</el-button>
       <el-button :icon="ArrowLeft" @click="router.push('/sales')">返回列表</el-button>
     </PageHeader>
+    <el-alert v-if="loadError" :title="loadError" type="error" :closable="false" show-icon style="margin-bottom:14px" />
     <div v-loading="loading">
       <template v-if="detail">
         <section class="biz-stats">
@@ -48,6 +49,15 @@ import { formatDateTime, formatMoney } from '../../utils/format'
 const route = useRoute(), router = useRouter(), saleId = Number(route.params.id)
 const detail = ref<SaleOrder | null>(null), loading = ref(false)
 const timeline = ref<OrderTimelineItem[]>([])
-async function load() { if (!Number.isFinite(saleId)) return; loading.value = true; try { [detail.value, timeline.value] = await Promise.all([saleApi.getDetail(saleId), saleApi.getTimeline(saleId)]) } catch { detail.value = null; timeline.value = [] } finally { loading.value = false } }
+const loadError = ref('')
+async function load() {
+  if (!Number.isInteger(saleId) || saleId <= 0) { loadError.value = '销售单编号无效，请返回列表重新进入'; return }
+  loading.value = true; loadError.value = ''
+  const [detailResult, timelineResult] = await Promise.allSettled([saleApi.getDetail(saleId), saleApi.getTimeline(saleId)])
+  if (detailResult.status === 'fulfilled') detail.value = detailResult.value
+  else { detail.value = null; loadError.value = `销售单 #${saleId} 详情接口加载失败，请检查后端 GET /sales/${saleId}` }
+  timeline.value = timelineResult.status === 'fulfilled' ? timelineResult.value : []
+  loading.value = false
+}
 onMounted(load)
 </script>
