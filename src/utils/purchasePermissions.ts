@@ -1,6 +1,5 @@
 import { useAuthStore } from '../stores/auth'
-
-const normalizeRoleName = (roleName?: string | null) => (roleName || '').trim()
+import { normalizeRoleName } from './roles'
 
 export const getCurrentRoleName = () => {
   const authStore = useAuthStore()

@@ -41,11 +41,12 @@ import { useAuthStore } from '../../stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { InventoryItem, InventoryQuery, InventoryStatus, Warehouse } from '../../types/inventory'
 import { formatDateTime, formatQuantity } from '../../utils/format'
+import { normalizeRoleName } from '../../utils/roles'
 
 const items = ref<InventoryItem[]>([]), warehouses = ref<Warehouse[]>([])
 const router = useRouter()
 const loading = ref(false), total = ref(0)
-const auth=useAuthStore(),canCount=computed(()=>(auth.userInfo?.roleName||auth.roleName)==='管理员')
+const auth=useAuthStore(),canCount=computed(()=>normalizeRoleName(auth.userInfo?.roleName||auth.roleName)==='管理员')
 const countVisible=ref(false),counting=ref(false),countTarget=ref<InventoryItem|null>(null),actualStock=ref(0),countRemark=ref('')
 const countChange=computed(()=>actualStock.value-Number(countTarget.value?.currentStock||0))
 const query = reactive<InventoryQuery>({ page: 1, size: 10, keyword: '', warehouseId: undefined, warningOnly: false })

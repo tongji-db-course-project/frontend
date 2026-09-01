@@ -15,11 +15,11 @@
           <div class="card-title">基本信息</div>
           <div class="info-grid">
             <div class="info-item">
-              <label>供应商ID：</label>
-              <span>{{ detail.supplierId ?? '-' }}</span>
+              <label>供应商：</label>
+              <span>{{ detail.supplierName || `供应商 #${detail.supplierId ?? '-'}` }}</span>
             </div>
             <div class="info-item"><label>采购日期：</label><span>{{ detail.purchaseDate }}</span></div>
-            <div class="info-item"><label>申请人ID：</label><span>{{ detail.applicantId ?? '-' }}</span></div>
+            <div class="info-item"><label>申请人：</label><span>{{ detail.applicantName || `用户 #${detail.applicantId ?? '-'}` }}</span></div>
             <div class="info-item">
               <label>总金额：</label>
               <span class="money">¥ {{ detail.totalAmount ? detail.totalAmount.toFixed(2) : '0.00' }}</span>
@@ -29,7 +29,7 @@
             <el-button v-if="detail.status === '待审批' && canApproveOrReject" type="success" @click="approveOrder">审批通过</el-button>
             <el-button v-if="detail.status === '待审批' && canApproveOrReject" type="warning" @click="rejectOrder">驳回</el-button>
             <el-button v-if="detail.status === '待审批' && canCancelPurchase(detail.status)" type="danger" @click="cancelOrder">作废</el-button>
-            <el-button v-if="detail.status === '已审批' && canStockIn" type="primary" @click="stockInOrder">采购入库</el-button>
+            <el-button v-if="detail.status === '已审批' && canStockIn" type="primary" @click="openStockIn">采购入库</el-button>
             <el-button v-if="canEditPurchase(detail.status)" @click="$router.push(`/purchases/edit/${detail.orderId}`)">编辑</el-button>
           </div>
         </section>
@@ -38,7 +38,7 @@
           <div class="card-title">商品明细清单</div>
           <el-table :data="detail.details" border class="beautify-table">
             <el-table-column type="index" label="#" width="60" />
-            <el-table-column prop="productId" label="商品ID" width="120" />
+            <el-table-column label="商品" min-width="180"><template #default="{ row }">{{ row.productName || `商品 #${row.productId}` }}</template></el-table-column>
             <el-table-column prop="purchasePrice" label="采购单价">
               <template #default="{ row }">¥ {{ row.purchasePrice?.toFixed(2) }}</template>
             </el-table-column>
@@ -61,6 +61,24 @@
     </div>
     </template>
     <el-empty v-else-if="!loading" description="未找到采购单"><el-button type="primary" @click="$router.push('/purchases')">返回列表</el-button></el-empty>
+
+    <el-dialog v-model="stockInVisible" title="采购入库确认" width="720px" destroy-on-close>
+      <el-form label-position="top">
+        <el-row :gutter="16">
+          <el-col :span="12"><el-form-item label="入库仓库" required><el-select v-model="stockInWarehouseId" placeholder="请选择仓库" style="width:100%"><el-option v-for="item in warehouses" :key="item.warehouseId" :label="item.warehouseName" :value="item.warehouseId" /></el-select></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="入库日期" required><el-date-picker v-model="stockInDate" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item></el-col>
+        </el-row>
+        <el-table :data="stockInItems" border>
+          <el-table-column label="商品" min-width="180"><template #default="{row}">{{row.productName || `商品 #${row.productId}`}}</template></el-table-column>
+          <el-table-column prop="orderedQuantity" label="订单数量" width="110" />
+          <el-table-column label="实际入库" width="170"><template #default="{row}"><el-input-number v-model="row.stockInQuantity" :min="0" :precision="0" style="width:100%" /></template></el-table-column>
+          <el-table-column label="校验" width="100"><template #default="{row}"><el-tag :type="row.stockInQuantity===row.orderedQuantity?'success':'danger'">{{row.stockInQuantity===row.orderedQuantity?'一致':'不一致'}}</el-tag></template></el-table-column>
+        </el-table>
+        <el-alert v-if="hasStockInDifference" title="实际入库数量必须与采购单数量一致，请核对后再提交。" type="warning" :closable="false" show-icon style="margin-top:12px" />
+        <el-form-item label="入库说明" style="margin-top:14px"><el-input v-model="stockInRemark" maxlength="200" /></el-form-item>
+      </el-form>
+      <template #footer><el-button @click="stockInVisible=false">取消</el-button><el-button type="primary" :loading="stockingIn" :disabled="hasStockInDifference||!stockInWarehouseId" @click="submitStockIn">确认入库</el-button></template>
+    </el-dialog>
   </div>
 </template>
 
@@ -73,6 +91,7 @@ import { inventoryApi } from '../../api/inventory';
 import { useAuthStore } from '../../stores/auth';
 import { canApproveOrStockIn, canCancelPurchaseBeforeApproval, canEditPurchaseBeforeApproval } from '../../utils/purchasePermissions';
 import type { PurchaseOrder } from '../../types/purchase';
+import type { Warehouse } from '../../types/inventory';
 import type { OrderTimelineItem } from '../../types/common';
 
 const route = useRoute();
@@ -86,6 +105,14 @@ const canApproveOrReject = computed(() => canApproveOrStockIn());
 const canStockIn = computed(() => canApproveOrStockIn());
 const canEditPurchase = (status?: string) => canEditPurchaseBeforeApproval(status);
 const canCancelPurchase = (status?: string) => canCancelPurchaseBeforeApproval(status);
+const stockInVisible = ref(false);
+const stockingIn = ref(false);
+const warehouses = ref<Warehouse[]>([]);
+const stockInWarehouseId = ref<number | null>(null);
+const stockInDate = ref('');
+const stockInRemark = ref('采购入库');
+const stockInItems = ref<Array<{ productId: number; productName?: string; orderedQuantity: number; stockInQuantity: number }>>([]);
+const hasStockInDifference = computed(() => stockInItems.value.some(item => item.stockInQuantity !== item.orderedQuantity));
 
 const approveOrder = async () => {
   if (!detail.value) return;
@@ -119,31 +146,48 @@ const rejectOrder = async () => {
   }
 };
 
-const stockInOrder = async () => {
+const openStockIn = async () => {
   if (!detail.value) return;
   try {
     if (!canApproveOrStockIn()) {
       ElMessage.warning('只有店长、管理员、库存管理员可以进行采购入库');
       return;
     }
-    const warehouses = await inventoryApi.getWarehouses();
-    const warehouse = warehouses?.find(item => item.status !== '禁用');
-    if (!warehouse) { ElMessage.warning('没有可用仓库，无法入库'); return; }
+    warehouses.value = (await inventoryApi.getWarehouses() || []).filter(item => item.status !== '禁用');
+    if (!warehouses.value.length) { ElMessage.warning('没有可用仓库，无法入库'); return; }
+    stockInWarehouseId.value = warehouses.value.length === 1 ? warehouses.value[0]?.warehouseId || null : null;
+    stockInDate.value = new Date().toISOString().split('T')[0];
+    stockInRemark.value = '采购入库';
+    stockInItems.value = (detail.value.details || []).map(item => ({ productId: item.productId, productName: item.productName, orderedQuantity: item.purchaseQuantity, stockInQuantity: item.purchaseQuantity }));
+    stockInVisible.value = true;
+  } catch (error) {
+    console.error(error);
+    ElMessage.error('仓库列表加载失败');
+  }
+};
+
+const submitStockIn = async () => {
+  if (!detail.value || !stockInWarehouseId.value || hasStockInDifference.value) return;
+  stockingIn.value = true;
+  try {
     await purchaseApi.stockIn(detail.value.orderId, {
       operatorId: currentUserId(),
-      warehouseId: warehouse.warehouseId,
-      stockInDate: new Date().toISOString().split('T')[0],
-      details: (detail.value.details || []).map((item) => ({
+      warehouseId: stockInWarehouseId.value,
+      stockInDate: stockInDate.value,
+      details: stockInItems.value.map((item) => ({
         productId: item.productId,
-        stockInQuantity: item.purchaseQuantity,
+        stockInQuantity: item.stockInQuantity,
       })),
-      remark: '采购入库',
+      remark: stockInRemark.value || '采购入库',
     });
     detail.value = { ...detail.value, status: '已入库' };
+    stockInVisible.value = false;
     ElMessage.success('采购入库成功');
   } catch (error) {
     console.error(error);
     ElMessage.error('入库失败');
+  } finally {
+    stockingIn.value = false;
   }
 };
 
