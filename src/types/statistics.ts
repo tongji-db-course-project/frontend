@@ -84,6 +84,8 @@ export interface DailySettlement {
   settlementId: number
   settlementDate: string
   totalSales: number
+  refundAmount: number
+  netSales: number
   cashAmount: number
   wechatAmount: number
   alipayAmount: number
