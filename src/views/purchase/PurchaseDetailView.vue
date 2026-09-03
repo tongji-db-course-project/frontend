@@ -226,7 +226,7 @@ onMounted(async () => {
     detail.value = unwrapResponse<PurchaseOrder>(res) || null;
     timeline.value = logs || [];
     if (detail.value && detail.value.status !== '待审批' && route.name === 'PurchaseEdit') {
-      ElMessage.warning('只有待审批采购单可以编辑');
+      ElMessage.warning('只有待审批或已驳回采购单可以编辑');
       router.replace(`/purchases/${detail.value.orderId}`);
     }
   } catch (error) {

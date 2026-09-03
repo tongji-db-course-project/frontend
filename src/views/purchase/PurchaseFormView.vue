@@ -211,7 +211,7 @@ const ensureEditable = async () => {
     const res = await purchaseApi.getDetail(Number(route.params.id));
     const detail = unwrapPurchaseDetail(res);
     if (!detail || !canEditPurchaseBeforeApproval(detail.status)) {
-      ElMessage.warning('只有待审批状态的采购单可以编辑');
+      ElMessage.warning('只有待审批或已驳回状态的采购单可以编辑');
       router.replace(`/purchases/${route.params.id}`);
       return false;
     }
@@ -254,8 +254,8 @@ const handleSave = async () => {
     try {
       const current = await purchaseApi.getDetail(Number(route.params.id));
       const detail = unwrapPurchaseDetail(current);
-      if (!detail || detail.status !== '待审批') {
-        ElMessage.warning('只有待审批状态的采购单才能编辑');
+      if (!detail || !canEditPurchaseBeforeApproval(detail.status)) {
+        ElMessage.warning('只有待审批或已驳回状态的采购单才能编辑');
         router.replace(`/purchases/${route.params.id}`);
         return;
       }

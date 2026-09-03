@@ -76,7 +76,7 @@ router.beforeEach((to,_from,next)=>{
         try{ roleName=normalizeRoleName(JSON.parse(localStorage.getItem('userInfo')||'{}').roleName||'') }catch{}
         const allowedPrefixes:Record<string,string[]>={
             '采购员':['/dashboard','/product','/purchases','/purchase-returns','/suppliers','/settlements','/inventory'],
-            '收银员':['/dashboard','/product','/sales','/returns','/members'],
+            '收银员':['/dashboard','/product','/sales','/returns','/members','/points'],
         }
         const allowed=allowedPrefixes[roleName]
         if(allowed&&!allowed.some(prefix=>to.path===prefix||to.path.startsWith(`${prefix}/`))){

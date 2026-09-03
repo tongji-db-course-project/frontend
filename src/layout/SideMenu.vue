@@ -139,8 +139,8 @@ const menuItems = [
 ]
 
 const rolePaths = {
-  采购员: ['/dashboard', '/product', '/sales', '/sales/checkout', '/returns', '/members'],
-  收银员: ['/dashboard', '/product', '/purchases', '/purchases/create', '/purchase-returns', '/inventory', '/inventory/records'],
+  采购员: ['/dashboard', '/product', '/suppliers', '/settlements', '/purchases', '/purchases/create', '/purchase-returns', '/inventory', '/inventory/records'],
+  收银员: ['/dashboard', '/product', '/sales/checkout', '/sales', '/returns', '/members', '/points/records'],
 }
 
 const visibleMenuItems = computed(() => {
