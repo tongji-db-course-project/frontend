@@ -51,7 +51,7 @@
       <el-table :data="form.details" border stripe>
         <el-table-column label="商品" min-width="250">
           <template #default="{ row }">
-            <el-select v-model="row.productId" filterable placeholder="搜索商品名称或条码" :loading="optionLoading" style="width:100%" @change="selectProduct(row)">
+            <el-select v-model="row.productId" filterable :disabled="!form.supplierId" :placeholder="form.supplierId ? '搜索商品名称或条码' : '请先选择供应商'" :loading="optionLoading" style="width:100%" @change="selectProduct(row)">
               <el-option v-for="item in products" :key="item.productId" :label="item.productName" :value="item.productId" :disabled="isProductSelected(item.productId, row)"><span>{{ item.productName }}</span><small class="option-meta">{{ item.barcode || `#${item.productId}` }} · {{ item.specification || '暂无规格' }}</small></el-option>
             </el-select>
           </template>
@@ -84,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, reactive, onMounted } from 'vue';
+import { computed, ref, reactive, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { purchaseApi } from '../../api/purchase';
@@ -139,13 +139,18 @@ const selectProduct = (row: PurchaseFormDto['details'][number]) => {
   if (!(row.purchasePrice > 0)) row.purchasePrice = Number(product.purchasePrice || 0);
 };
 
-const applyInventorySuggestion = () => {
+const applyInventorySuggestion = async () => {
   if (isEdit.value || route.query.source !== 'inventory-warning') return;
   const productId = Number(route.query.productId);
+  if (!productId) return;
+  const detail = await productApi.getDetail(productId);
+  if (!detail) return;
+  form.supplierId = detail.supplierId || form.supplierId;
+  await loadProducts(form.supplierId || undefined);
+  // 当前库存为列表接口聚合字段，从按供应商过滤后的列表里取
   const product = products.value.find(item => item.productId === productId);
   if (!product) return;
   const suggestedQuantity = Math.max(1, Number(product.stockWarning || 0) - Number(product.currentStock || 0));
-  form.supplierId = product.supplierId || form.supplierId;
   form.details = [{
     productId: product.productId,
     productName: product.productName,
@@ -155,17 +160,33 @@ const applyInventorySuggestion = () => {
   ElMessage.success(`已根据库存预警带入 ${product.productName}，请确认采购数量和价格`);
 };
 
+// 商品下拉按所选供应商过滤（后端 /products 支持 supplierId 参数）
+const loadProducts = async (supplierId?: number) => {
+  if (!supplierId) { products.value = []; return; }
+  optionLoading.value = true;
+  try {
+    const result = await productApi.getList({ page: 1, size: 500, supplierId });
+    products.value = (result?.list || []).filter(item => item.status !== '停用');
+  } catch {
+    ElMessage.warning('商品选项加载失败，请刷新后重试');
+  } finally {
+    optionLoading.value = false;
+  }
+};
+
+// 切换供应商时清空已选明细（商品归属已变），并按新供应商重载商品
+watch(() => form.supplierId, (val, oldVal) => {
+  if (oldVal && oldVal !== val) form.details = [];
+  loadProducts(val || undefined);
+});
+
 const loadOptions = async () => {
   optionLoading.value = true;
   try {
-    const [supplierResult, productResult] = await Promise.all([
-      supplierApi.getList({ page: 1, size: 200 }),
-      productApi.getList({ page: 1, size: 200 }),
-    ]);
-    suppliers.value = (supplierResult?.list || []).filter(item => item.status === '启用');
-    products.value = (productResult?.list || []).filter(item => item.status !== '停用');
+    const result = await supplierApi.getList({ page: 1, size: 200 });
+    suppliers.value = (result?.list || []).filter(item => item.status === '启用');
   } catch {
-    ElMessage.warning('供应商或商品选项加载失败，请刷新后重试');
+    ElMessage.warning('供应商选项加载失败，请刷新后重试');
   } finally {
     optionLoading.value = false;
   }
@@ -305,7 +326,7 @@ onMounted(async () => {
     form.applicantId = currentUserId.value || null;
     form.purchaseDate = new Date().toISOString().slice(0, 10);
     addLine();
-    applyInventorySuggestion();
+    await applyInventorySuggestion();
   }
 });
 </script>

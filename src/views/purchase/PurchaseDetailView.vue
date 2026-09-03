@@ -28,7 +28,7 @@
           <div class="detail-actions">
             <el-button v-if="detail.status === '待审批' && canApproveOrReject" type="success" @click="approveOrder">审批通过</el-button>
             <el-button v-if="detail.status === '待审批' && canApproveOrReject" type="warning" @click="rejectOrder">驳回</el-button>
-            <el-button v-if="detail.status === '待审批' && canCancelPurchase(detail.status)" type="danger" @click="cancelOrder">作废</el-button>
+            <el-button v-if="canCancelPurchase(detail.status)" type="danger" @click="cancelOrder">作废</el-button>
             <el-button v-if="detail.status === '已审批' && canStockIn" type="primary" @click="openStockIn">采购入库</el-button>
             <el-button v-if="canEditPurchase(detail.status)" @click="$router.push(`/purchases/edit/${detail.orderId}`)">编辑</el-button>
           </div>
@@ -117,7 +117,7 @@ const hasStockInDifference = computed(() => stockInItems.value.some(item => item
 const approveOrder = async () => {
   if (!detail.value) return;
   if (!canApproveOrStockIn()) {
-    ElMessage.warning('只有店长、管理员、库存管理员可以审批采购单');
+    ElMessage.warning('只有管理员、采购员可以审批采购单');
     return;
   }
   try {
@@ -134,7 +134,7 @@ const rejectOrder = async () => {
   if (!detail.value) return;
   try {
     if (!canApproveOrStockIn()) {
-      ElMessage.warning('只有店长、管理员、库存管理员可以驳回采购单');
+      ElMessage.warning('只有管理员、采购员可以驳回采购单');
       return;
     }
     await purchaseApi.reject(detail.value.orderId, { approverId: currentUserId(), remark: '审批驳回' });
@@ -150,7 +150,7 @@ const openStockIn = async () => {
   if (!detail.value) return;
   try {
     if (!canApproveOrStockIn()) {
-      ElMessage.warning('只有店长、管理员、库存管理员可以进行采购入库');
+      ElMessage.warning('只有管理员、采购员可以进行采购入库');
       return;
     }
     warehouses.value = (await inventoryApi.getWarehouses() || []).filter(item => item.status !== '禁用');
@@ -194,7 +194,7 @@ const submitStockIn = async () => {
 const cancelOrder = async () => {
   if (!detail.value) return;
   if (!canCancelPurchaseBeforeApproval(detail.value.status)) {
-    ElMessage.warning('只有采购员、店长、管理员可以在待审批状态下作废采购单');
+    ElMessage.warning('只有管理员、采购员可以作废采购单（待审批、已驳回、已审批状态）');
     return;
   }
   try {
