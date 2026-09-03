@@ -51,7 +51,7 @@
       <el-table :data="form.details" border stripe>
         <el-table-column label="商品" min-width="250">
           <template #default="{ row }">
-            <el-select v-model="row.productId" filterable :disabled="!form.supplierId" :placeholder="form.supplierId ? '搜索商品名称或条码' : '请先选择供应商'" :loading="optionLoading" style="width:100%" @change="selectProduct(row)">
+            <el-select v-model="row.productId" filterable :key="form.supplierId" :disabled="!form.supplierId" :placeholder="form.supplierId ? '搜索商品名称或条码' : '请先选择供应商'" :loading="optionLoading" style="width:100%" @change="selectProduct(row)">
               <el-option v-for="item in products" :key="item.productId" :label="item.productName" :value="item.productId" :disabled="isProductSelected(item.productId, row)"><span>{{ item.productName }}</span><small class="option-meta">{{ item.barcode || `#${item.productId}` }} · {{ item.specification || '暂无规格' }}</small></el-option>
             </el-select>
           </template>
@@ -174,9 +174,12 @@ const loadProducts = async (supplierId?: number) => {
   }
 };
 
-// 切换供应商时清空已选明细（商品归属已变），并按新供应商重载商品
+// 切换供应商时清空已选明细（商品归属已变）并补一行空行，按新供应商重载商品
 watch(() => form.supplierId, (val, oldVal) => {
-  if (oldVal && oldVal !== val) form.details = [];
+  if (oldVal && oldVal !== val) {
+    form.details = [];
+    addLine();
+  }
   loadProducts(val || undefined);
 });
 
