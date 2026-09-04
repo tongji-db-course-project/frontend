@@ -58,25 +58,20 @@
     <el-dialog v-model="createVisible" title="新建采购退货" width="760px">
       <el-form label-position="top">
         <el-form-item label="原采购单（已入库）">
-          <div class="source">
-            <el-select
-              v-model="form.purchaseId"
-              filterable
-              placeholder="选择已入库采购单"
-              style="flex: 1"
-              @change="readPurchase"
-            >
-              <el-option
-                v-for="p in stockedPurchases"
-                :key="p.orderId"
-                :label="`${p.orderCode} · ${p.supplierName || '供应商#' + p.supplierId}`"
-                :value="p.orderId"
-              />
-            </el-select>
-            <el-button :loading="sourceLoading" :disabled="!form.purchaseId" @click="readPurchase">
-              读取采购单
-            </el-button>
-          </div>
+          <el-select
+            v-model="form.purchaseId"
+            filterable
+            placeholder="选择已入库采购单，选择后自动加载明细"
+            style="width: 100%"
+            @change="readPurchase"
+          >
+            <el-option
+              v-for="p in stockedPurchases"
+              :key="p.orderId"
+              :label="`${p.orderCode} · ${p.supplierName || '供应商#' + p.supplierId}`"
+              :value="p.orderId"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="退货日期">
           <el-date-picker v-model="form.returnDate" value-format="YYYY-MM-DD" />
