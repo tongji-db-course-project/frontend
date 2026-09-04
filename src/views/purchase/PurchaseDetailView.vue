@@ -28,7 +28,7 @@
           <div class="detail-actions">
             <el-button v-if="detail.status === '待审批' && canApproveOrReject" type="success" @click="approveOrder">审批通过</el-button>
             <el-button v-if="detail.status === '待审批' && canApproveOrReject" type="warning" @click="rejectOrder">驳回</el-button>
-            <el-button v-if="detail.status === '待审批' && canCancelPurchase(detail.status)" type="danger" @click="cancelOrder">作废</el-button>
+            <el-button v-if="canCancelPurchase(detail.status)" type="danger" @click="cancelOrder">作废</el-button>
             <el-button v-if="detail.status === '已审批' && canStockIn" type="primary" @click="openStockIn">采购入库</el-button>
             <el-button v-if="canEditPurchase(detail.status)" @click="$router.push(`/purchases/edit/${detail.orderId}`)">编辑</el-button>
           </div>
@@ -85,7 +85,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { purchaseApi } from '../../api/purchase';
 import { inventoryApi } from '../../api/inventory';
 import { useAuthStore } from '../../stores/auth';
@@ -117,7 +117,7 @@ const hasStockInDifference = computed(() => stockInItems.value.some(item => item
 const approveOrder = async () => {
   if (!detail.value) return;
   if (!canApproveOrStockIn()) {
-    ElMessage.warning('只有店长、管理员、库存管理员可以审批采购单');
+    ElMessage.warning('只有管理员、采购员可以审批采购单');
     return;
   }
   try {
@@ -132,12 +132,19 @@ const approveOrder = async () => {
 
 const rejectOrder = async () => {
   if (!detail.value) return;
+  if (!canApproveOrStockIn()) {
+    ElMessage.warning('只有管理员、采购员可以驳回采购单');
+    return;
+  }
   try {
-    if (!canApproveOrStockIn()) {
-      ElMessage.warning('只有店长、管理员、库存管理员可以驳回采购单');
-      return;
-    }
-    await purchaseApi.reject(detail.value.orderId, { approverId: currentUserId(), remark: '审批驳回' });
+    // 弹窗填写驳回理由，写入 ApprovalDto.remark
+    const { value } = await ElMessageBox.prompt('请输入驳回理由', '驳回采购单', {
+      confirmButtonText: '确认驳回',
+      cancelButtonText: '取消',
+      inputPlaceholder: '如：价格过高、供应商变更等',
+      inputValidator: (v) => (v && v.trim() ? true : '驳回理由不能为空'),
+    });
+    await purchaseApi.reject(detail.value.orderId, { approverId: currentUserId(), remark: value.trim() });
     detail.value = { ...detail.value, status: '已驳回' };
     ElMessage.success('驳回成功');
   } catch (error) {
@@ -150,7 +157,7 @@ const openStockIn = async () => {
   if (!detail.value) return;
   try {
     if (!canApproveOrStockIn()) {
-      ElMessage.warning('只有店长、管理员、库存管理员可以进行采购入库');
+      ElMessage.warning('只有管理员、采购员可以进行采购入库');
       return;
     }
     warehouses.value = (await inventoryApi.getWarehouses() || []).filter(item => item.status !== '禁用');
@@ -194,7 +201,7 @@ const submitStockIn = async () => {
 const cancelOrder = async () => {
   if (!detail.value) return;
   if (!canCancelPurchaseBeforeApproval(detail.value.status)) {
-    ElMessage.warning('只有采购员、店长、管理员可以在待审批状态下作废采购单');
+    ElMessage.warning('只有管理员、采购员可以作废采购单（待审批、已驳回、已审批状态）');
     return;
   }
   try {
@@ -226,7 +233,7 @@ onMounted(async () => {
     detail.value = unwrapResponse<PurchaseOrder>(res) || null;
     timeline.value = logs || [];
     if (detail.value && detail.value.status !== '待审批' && route.name === 'PurchaseEdit') {
-      ElMessage.warning('只有待审批采购单可以编辑');
+      ElMessage.warning('只有待审批或已驳回采购单可以编辑');
       router.replace(`/purchases/${detail.value.orderId}`);
     }
   } catch (error) {
