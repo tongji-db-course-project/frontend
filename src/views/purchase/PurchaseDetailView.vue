@@ -85,7 +85,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { purchaseApi } from '../../api/purchase';
 import { inventoryApi } from '../../api/inventory';
 import { useAuthStore } from '../../stores/auth';
@@ -132,12 +132,19 @@ const approveOrder = async () => {
 
 const rejectOrder = async () => {
   if (!detail.value) return;
+  if (!canApproveOrStockIn()) {
+    ElMessage.warning('只有管理员、采购员可以驳回采购单');
+    return;
+  }
   try {
-    if (!canApproveOrStockIn()) {
-      ElMessage.warning('只有管理员、采购员可以驳回采购单');
-      return;
-    }
-    await purchaseApi.reject(detail.value.orderId, { approverId: currentUserId(), remark: '审批驳回' });
+    // 弹窗填写驳回理由，写入 ApprovalDto.remark
+    const { value } = await ElMessageBox.prompt('请输入驳回理由', '驳回采购单', {
+      confirmButtonText: '确认驳回',
+      cancelButtonText: '取消',
+      inputPlaceholder: '如：价格过高、供应商变更等',
+      inputValidator: (v) => (v && v.trim() ? true : '驳回理由不能为空'),
+    });
+    await purchaseApi.reject(detail.value.orderId, { approverId: currentUserId(), remark: value.trim() });
     detail.value = { ...detail.value, status: '已驳回' };
     ElMessage.success('驳回成功');
   } catch (error) {
