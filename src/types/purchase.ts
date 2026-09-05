@@ -65,7 +65,6 @@ export interface PurchaseStockInDetailDto {
 
 export interface PurchaseStockInDto {
   operatorId: number;
-  warehouseId: number;
   stockInDate: string;
   details: PurchaseStockInDetailDto[];
   remark?: string;

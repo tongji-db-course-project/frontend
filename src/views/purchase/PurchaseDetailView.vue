@@ -69,7 +69,6 @@ import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { purchaseApi } from '../../api/purchase';
-import { inventoryApi } from '../../api/inventory';
 import { useAuthStore } from '../../stores/auth';
 import { canApproveOrStockIn, canCancelPurchaseBeforeApproval, canEditPurchaseBeforeApproval } from '../../utils/purchasePermissions';
 import type { PurchaseOrder } from '../../types/purchase';
@@ -126,12 +125,8 @@ const stockInOrder = async () => {
       ElMessage.warning('只有店长、管理员、库存管理员可以进行采购入库');
       return;
     }
-    const warehouses = await inventoryApi.getWarehouses();
-    const warehouse = warehouses?.find(item => item.status !== '禁用');
-    if (!warehouse) { ElMessage.warning('没有可用仓库，无法入库'); return; }
     await purchaseApi.stockIn(detail.value.orderId, {
       operatorId: currentUserId(),
-      warehouseId: warehouse.warehouseId,
       stockInDate: new Date().toISOString().split('T')[0],
       details: (detail.value.details || []).map((item) => ({
         productId: item.productId,

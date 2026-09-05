@@ -1,13 +1,5 @@
 import type { PageQuery } from './common'
 
-export interface Warehouse {
-  warehouseId: number
-  warehouseName: string
-  address?: string | null
-  status?: '启用' | '禁用' | null
-  createTime?: string | null
-}
-
 export interface InventoryItem {
   inventoryId: number
   productId: number
@@ -25,7 +17,6 @@ export interface InventoryItem {
 export type InventoryStatus = '正常' | '预警' | '缺货'
 
 export interface InventoryQuery extends PageQuery {
-  warehouseId?: number
   warningOnly?: boolean
 }
 
