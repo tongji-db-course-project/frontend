@@ -43,14 +43,18 @@ export interface InventoryRecordQuery extends PageQuery {
   endDate?: string
 }
 
-export interface PurchaseSuggestion {
+export interface PurchaseSuggestionItem {
   productId: number
   productName: string
-  supplierId: number
-  supplierName?: string | null
   currentStock: number
   stockWarning: number
   suggestedQuantity: number
+}
+
+export interface SupplierPurchaseSuggestion {
+  supplierId: number
+  supplierName: string
+  items: PurchaseSuggestionItem[]
 }
 
 export interface InventoryCountTask {

@@ -83,6 +83,7 @@ const menuItems = [
   {
     name: '采购管理', icon: Box,
     children: [
+      { name: '库存采购预警', path: '/purchase-suggestions' },
       { name: '采购单列表', path: '/purchases' },
       { name: '采购退货管理', path: '/purchase-returns' },
     ],
@@ -138,7 +139,7 @@ const menuItems = [
 ]
 
 const rolePaths = {
-  采购员: ['/dashboard', '/product', '/sales', '/sales/checkout', '/members'],
+  采购员: ['/dashboard', '/product', '/purchase-suggestions', '/purchases', '/purchase-returns', '/inventory', '/inventory/records', '/members'],
   收银员: ['/dashboard', '/product', '/purchases', '/purchases/create', '/purchase-returns', '/inventory', '/inventory/records'],
 }
 

@@ -21,6 +21,7 @@ const router = createRouter({
             {path:'members',component:()=>import('../views/member/MemberListView.vue')},
 
             //采购管理
+            {path:'purchase-suggestions',component:()=>import('../views/purchase/PurchaseSuggestionView.vue'),meta: { title: '库存采购预警', parent: '采购管理' }},
             {path: 'purchases',name: 'PurchaseList',component: () => import('../views/purchase/PurchaseListView.vue'),meta: { title: '采购单列表', parent: '采购管理' },},
             {path:'purchases/create',name: 'PurchaseCreate',component:()=>import('../views/purchase/PurchaseFormView.vue'),meta: { title: '新建采购单', parent: '采购管理' }},
             {path:'purchases/edit/:id',name: 'PurchaseEdit',component:()=>import('../views/purchase/PurchaseFormView.vue'),meta: { title: '编辑采购单', parent: '采购管理' }},
@@ -74,7 +75,7 @@ router.beforeEach((to,_from,next)=>{
         let roleName=''
         try{ roleName=JSON.parse(localStorage.getItem('userInfo')||'{}').roleName||'' }catch{}
         const allowedPrefixes:Record<string,string[]>={
-            '采购员':['/dashboard','/product','/sales','/returns','/members'],
+            '采购员':['/dashboard','/product','/purchase-suggestions','/purchases','/purchase-returns','/inventory','/members'],
             '收银员':['/dashboard','/product','/purchases','/purchase-returns','/inventory'],
         }
         const allowed=allowedPrefixes[roleName]
