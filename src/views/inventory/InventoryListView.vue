@@ -43,7 +43,10 @@ import { formatDateTime, formatQuantity } from '../../utils/format'
 const items = ref<InventoryItem[]>([])
 const router = useRouter()
 const loading = ref(false), total = ref(0)
-const auth=useAuthStore(),canCount=computed(()=>(auth.userInfo?.roleName||auth.roleName)==='管理员')
+const auth=useAuthStore(),canCount=computed(()=>{
+  const roleName=auth.userInfo?.roleName||auth.roleName
+  return roleName==='系统管理员'||roleName==='管理员'
+})
 const countVisible=ref(false),counting=ref(false),countTarget=ref<InventoryItem|null>(null),actualStock=ref(0),countRemark=ref('')
 const countChange=computed(()=>actualStock.value-Number(countTarget.value?.currentStock||0))
 const query = reactive<InventoryQuery>({ page: 1, size: 10, keyword: '', warningOnly: false })
@@ -57,6 +60,6 @@ async function load() { loading.value = true; try { const params = { ...query, k
 function search() { query.page = 1; load() }
 function reset() { Object.assign(query, { page: 1, size: 10, keyword: '', warningOnly: false }); load() }
 function openCount(row:InventoryItem){countTarget.value=row;actualStock.value=row.currentStock;countRemark.value='';countVisible.value=true}
-async function submitCount(){if(!countTarget.value||countChange.value===0)return;await ElMessageBox.confirm(`确认按实际库存 ${actualStock.value} 调整吗？`,'确认盘点结果',{type:'warning'});counting.value=true;try{await inventoryApi.adjust({productId:countTarget.value.productId,changeQty:countChange.value,recordType:'盘点',remark:countRemark.value||'库存盘点调整',sourceNo:`PD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}`});ElMessage.success('盘点库存已调整并生成流水');countVisible.value=false;await load()}finally{counting.value=false}}
+async function submitCount(){if(!countTarget.value||countChange.value===0)return;await ElMessageBox.confirm(`确认按实际库存 ${actualStock.value} 调整吗？`,'确认盘点结果',{type:'warning'});counting.value=true;try{const now=new Date();await inventoryApi.adjust({productId:countTarget.value.productId,changeQty:countChange.value,actualStock:actualStock.value,recordType:'盘点',remark:countRemark.value||'库存盘点调整',sourceNo:`PD-${now.toISOString().replace(/[-:T.Z]/g,'').slice(0,14)}`});ElMessage.success('盘点库存已调整并生成流水');countVisible.value=false;await load()}finally{counting.value=false}}
 onMounted(load)
 </script>

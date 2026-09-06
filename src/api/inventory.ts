@@ -12,7 +12,7 @@ export const inventoryApi = {
   getRecords(params: InventoryRecordQuery) {
     return request.get<unknown, PageResult<InventoryRecord>>('/inventory/records', { params })
   },
-  adjust(data: { productId: number; changeQty: number; recordType: string; remark?: string; sourceNo?: string }) {
+  adjust(data: { productId: number; changeQty: number; actualStock?: number; recordType: string; remark?: string; sourceNo?: string }) {
     return request.put<unknown, InventoryItem>('/inventory/adjust', data)
   },
   /** 按供应商聚合系统总仓的低库存采购建议。 */

@@ -11,7 +11,7 @@ export interface InventoryItem {
   warehouseId: number
   warehouseName?: string
   currentStock: number
-  lastUpdateTime: string
+  lastUpdateTime: string | null
 }
 
 export type InventoryStatus = '正常' | '预警' | '缺货'
