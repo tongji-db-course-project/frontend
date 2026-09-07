@@ -10,12 +10,12 @@
     <section class="biz-card">
       <el-table v-loading="loading" :data="displayRows" border
         ><el-table-column prop="productName" label="商品" min-width="190" /><el-table-column
-          prop="soldQuantity"
+          prop="saleQuantity"
           label="销量"
           width="90"
           align="right"
-        /><el-table-column prop="beginningStock" label="期初库存" width="110" align="right" /><el-table-column
-          prop="endingStock"
+        /><el-table-column prop="openingStock" label="期初库存" width="110" align="right" /><el-table-column
+          prop="closingStock"
           label="期末库存"
           width="110"
           align="right"
@@ -39,13 +39,13 @@
 import { computed, onMounted, ref } from 'vue'
 import PageHeader from '../../components/PageHeader.vue'
 import { statisticsApi } from '../../api/statistics'
-import type { InventoryTurnover } from '../../types/statistics'
+import type { InventoryTurnoverItem } from '../../types/statistics'
 const now = new Date(),
   start = new Date()
 start.setDate(now.getDate() - 29)
 const toDate = (d: Date) => d.toISOString().slice(0, 10)
 const range = ref([toDate(start), toDate(now)]),
-  rows = ref<InventoryTurnover[]>([]),
+  rows = ref<InventoryTurnoverItem[]>([]),
   loading = ref(false),
   stagnantOnly = ref(false)
 const displayRows = computed(() => (stagnantOnly.value ? rows.value.filter((x) => x.stagnant) : rows.value))
@@ -53,8 +53,11 @@ async function load() {
   if (range.value.length !== 2) return
   loading.value = true
   try {
-    rows.value =
-      (await statisticsApi.getInventoryTurnover({ startDate: range.value[0], endDate: range.value[1] })) ?? []
+    const result = await statisticsApi.getInventoryTurnover({
+      startDate: range.value[0],
+      endDate: range.value[1],
+    })
+    rows.value = result.list ?? []
   } finally {
     loading.value = false
   }
