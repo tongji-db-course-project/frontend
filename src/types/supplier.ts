@@ -1,7 +1,7 @@
 import type { PageQuery } from './common'
 
 export type SupplierStatus = '启用' | '禁用'
-export type CreditLevel = 'A' | 'B' | 'C'
+export type CreditLevel = 'A' | 'B' | 'C' | 'D'
 
 export interface Supplier {
   supplierId: number

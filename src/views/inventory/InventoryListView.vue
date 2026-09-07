@@ -39,6 +39,7 @@ import { useAuthStore } from '../../stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { InventoryItem, InventoryQuery, InventoryStatus } from '../../types/inventory'
 import { formatDateTime, formatQuantity } from '../../utils/format'
+import { normalizeRoleName } from '../../utils/roles'
 
 const items = ref<InventoryItem[]>([])
 const router = useRouter()

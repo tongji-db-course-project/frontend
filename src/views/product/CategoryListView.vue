@@ -5,7 +5,7 @@
     </PageHeader>
 
     <section class="category-grid" v-loading="loading">
-      <article v-for="(item, index) in categories" :key="item.categoryId" :class="{ disabled: item.status === '停用' }">
+      <article v-for="(item, index) in categories" :key="item.categoryId" :class="{ disabled: item.status === '禁用' }">
         <header>
           <span :class="`tone-${index % 4}`"><Goods /></span>
           <div class="actions">
@@ -17,7 +17,7 @@
         <p>{{ item.categoryDesc || '暂无分类说明' }}</p>
         <footer>
           <span>分类编号 #{{ item.categoryId }}</span>
-          <b :class="{ off: item.status === '停用' }">{{ item.status }}</b>
+          <b :class="{ off: item.status === '禁用' }">{{ item.status }}</b>
         </footer>
       </article>
       <button class="add-card" @click="openForm()"><Plus /><strong>新建商品分类</strong><span>创建新的商品归类</span></button>
@@ -28,7 +28,7 @@
       <div class="toolbar">
         <el-input v-model="query.keyword" placeholder="搜索分类名称" clearable :prefix-icon="Search" @keyup.enter="search" />
         <el-select v-model="query.status" placeholder="全部状态" clearable>
-          <el-option label="启用" value="启用" /><el-option label="停用" value="停用" />
+          <el-option label="启用" value="启用" /><el-option label="禁用" value="禁用" />
         </el-select>
         <el-button type="primary" @click="search">查询</el-button>
         <el-button @click="reset">重置</el-button>
@@ -39,7 +39,7 @@
         <el-table-column prop="categoryName" label="分类名称" min-width="160" />
         <el-table-column prop="categoryDesc" label="分类说明" min-width="260"><template #default="{ row }">{{ row.categoryDesc || '-' }}</template></el-table-column>
         <el-table-column label="状态" width="100" align="center"><template #default="{ row }"><el-tag :type="row.status === '启用' ? 'success' : 'info'">{{ row.status }}</el-tag></template></el-table-column>
-        <el-table-column label="操作" width="210" fixed="right" align="center"><template #default="{ row }"><el-button link type="primary" @click="openDetail(row)">详情</el-button><el-button link type="primary" @click="openForm(row)">编辑</el-button><el-button link type="danger" @click="remove(row)">删除</el-button></template></el-table-column>
+        <el-table-column label="操作" width="210" fixed="right" align="center"><template #default="{ row }"><el-button link type="primary" @click="openDetail(row)">详情</el-button><el-button link type="primary" @click="openForm(row)">编辑</el-button><el-button v-if="row.status === '启用'" link type="danger" @click="disableCategory(row)">禁用</el-button></template></el-table-column>
       </el-table>
       <div class="pagination"><el-pagination v-model:current-page="query.page" v-model:page-size="query.size" background layout="total, sizes, prev, pager, next, jumper" :total="total" :page-sizes="[10, 20, 50]" @change="load" /></div>
     </section>
@@ -48,7 +48,7 @@
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
         <el-form-item label="分类名称" prop="categoryName"><el-input v-model="form.categoryName" maxlength="50" show-word-limit /></el-form-item>
         <el-form-item label="分类说明" prop="categoryDesc"><el-input v-model="form.categoryDesc" type="textarea" :rows="3" maxlength="200" show-word-limit /></el-form-item>
-        <el-form-item label="状态" prop="status"><el-radio-group v-model="form.status"><el-radio value="启用">启用</el-radio><el-radio value="停用">停用</el-radio></el-radio-group></el-form-item>
+        <el-form-item label="状态" prop="status"><el-radio-group v-model="form.status"><el-radio value="启用">启用</el-radio><el-radio value="禁用">禁用</el-radio></el-radio-group></el-form-item>
       </el-form>
       <template #footer><el-button @click="formVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="save">保存分类</el-button></template>
     </el-dialog>
@@ -123,10 +123,10 @@ async function openDetail(item: ProductCategory) {
   try { selected.value = await categoryApi.getDetail(item.categoryId) }
   finally { detailLoading.value = false }
 }
-async function remove(item: ProductCategory) {
-  await ElMessageBox.confirm(`确认删除分类“${item.categoryName}”吗？`, '删除分类', { type: 'warning' })
+async function disableCategory(item: ProductCategory) {
+  await ElMessageBox.confirm(`确认禁用分类“${item.categoryName}”吗？`, '禁用分类', { type: 'warning' })
   await categoryApi.remove(item.categoryId)
-  ElMessage.success('分类删除成功')
+  ElMessage.success('分类已禁用')
   if (categories.value.length === 1 && query.page > 1) query.page--
   await load()
 }

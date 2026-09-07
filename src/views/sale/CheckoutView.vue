@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { Delete, Search, ShoppingCart } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
@@ -50,9 +50,11 @@ import PageHeader from '../../components/PageHeader.vue'
 import { productApi } from '../../api/product'
 import { memberApi } from '../../api/member'
 import { saleApi } from '../../api/sale'
+import { inventoryApi } from '../../api/inventory'
 import type { ProductListItem } from '../../types/product'
 import type { Member } from '../../types/member'
 import type { SaleOrder } from '../../types/sale'
+import type { Warehouse } from '../../types/inventory'
 import { formatMoney } from '../../utils/format'
 
 type CheckoutProduct = ProductListItem
@@ -103,9 +105,19 @@ async function findMember() {
   finally { memberLoading.value = false }
 }
 
+async function loadWarehouses() {
+  warehouseLoading.value = true
+  try {
+    warehouses.value = (await inventoryApi.getWarehouses() ?? []).filter(item => item.status !== '禁用')
+    if (warehouses.value.length === 1) warehouseId.value = warehouses.value[0]?.warehouseId ?? null
+  } catch { warehouses.value = [] }
+  finally { warehouseLoading.value = false }
+}
+
 async function checkout() {
   if (!cart.value.length) return
   if (!member.value) { ElMessage.warning('会员卡支付需要先查询并选择会员'); return }
+  if (!warehouseId.value) { ElMessage.warning('请选择出库仓库'); return }
   await ElMessageBox.confirm(`确认从 ${member.value.memberName} 的会员卡完成本次扣款吗？`, '确认收款', { type: 'warning', confirmButtonText: '确认扣款' })
   submitting.value = true
   try {
@@ -118,6 +130,8 @@ async function checkout() {
     ElMessage.success('收款成功')
   } finally { submitting.value = false }
 }
+
+onMounted(loadWarehouses)
 </script>
 
 <style scoped>

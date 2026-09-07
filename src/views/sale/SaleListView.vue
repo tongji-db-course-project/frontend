@@ -16,8 +16,8 @@
         <el-input-number v-model="query.memberId" :min="1" :precision="0" controls-position="right" placeholder="会员编号" />
         <el-button type="primary" @click="search">查询</el-button><el-button @click="reset">重置</el-button>
       </div>
-      <el-table v-loading="loading" :data="orders" row-key="saleId" stripe border class="biz-table" @row-click="showDetail">
-        <el-table-column label="销售单号" min-width="170"><template #default="{ row }"><button class="biz-link" @click.stop="showDetail(row)">{{ row.saleNo }}</button><small class="biz-muted" style="display:block">{{ formatDateTime(row.saleDate) }}</small></template></el-table-column>
+      <el-table v-loading="loading" :data="orders" row-key="saleId" stripe border class="biz-table">
+        <el-table-column label="销售单号" min-width="170"><template #default="{ row }"><strong>{{ row.saleNo }}</strong><small class="biz-muted" style="display:block">{{ formatDateTime(row.saleDate) }}</small></template></el-table-column>
         <el-table-column label="会员" min-width="130"><template #default="{ row }">{{ row.memberId ? `会员 #${row.memberId}` : '散客' }}</template></el-table-column>
         <el-table-column label="收银员" min-width="120"><template #default="{ row }">用户 #{{ row.userId }}</template></el-table-column>
         <el-table-column label="原始金额" width="115" align="right"><template #default="{ row }">{{ formatMoney(row.totalAmount) }}</template></el-table-column>

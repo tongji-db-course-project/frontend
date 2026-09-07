@@ -42,7 +42,7 @@ export interface ProductQuery extends PageQuery {
   maxStock?: number
 }
 
-export type CategoryStatus = '启用' | '停用'
+export type CategoryStatus = '启用' | '禁用'
 
 export interface ProductCategory {
   categoryId: number

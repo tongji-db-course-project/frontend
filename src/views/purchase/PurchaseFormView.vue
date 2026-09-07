@@ -51,7 +51,7 @@
       <el-table :data="form.details" border stripe>
         <el-table-column label="商品" min-width="250">
           <template #default="{ row }">
-            <el-select v-model="row.productId" filterable placeholder="搜索商品名称或条码" :loading="optionLoading" style="width:100%" @change="selectProduct(row)">
+            <el-select v-model="row.productId" filterable :key="form.supplierId" :disabled="!form.supplierId" :placeholder="form.supplierId ? '搜索商品名称或条码' : '请先选择供应商'" :loading="optionLoading" style="width:100%" @change="selectProduct(row)">
               <el-option v-for="item in products" :key="item.productId" :label="item.productName" :value="item.productId" :disabled="isProductSelected(item.productId, row)"><span>{{ item.productName }}</span><small class="option-meta">{{ item.barcode || `#${item.productId}` }} · {{ item.specification || '暂无规格' }}</small></el-option>
             </el-select>
           </template>
@@ -84,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, reactive, onMounted } from 'vue';
+import { computed, ref, reactive, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { purchaseApi } from '../../api/purchase';
@@ -161,17 +161,36 @@ const applyInventorySuggestion = async () => {
   ElMessage.success(`已根据库存预警带入 ${product.productName}，请确认采购数量和价格`);
 };
 
+// 商品下拉按所选供应商过滤（后端 /products 支持 supplierId 参数）
+const loadProducts = async (supplierId?: number) => {
+  if (!supplierId) { products.value = []; return; }
+  optionLoading.value = true;
+  try {
+    const result = await productApi.getList({ page: 1, size: 500, supplierId });
+    products.value = (result?.list || []).filter(item => item.status !== '停用');
+  } catch {
+    ElMessage.warning('商品选项加载失败，请刷新后重试');
+  } finally {
+    optionLoading.value = false;
+  }
+};
+
+// 切换供应商时清空已选明细（商品归属已变）并补一行空行，按新供应商重载商品
+watch(() => form.supplierId, (val, oldVal) => {
+  if (oldVal && oldVal !== val) {
+    form.details = [];
+    addLine();
+  }
+  loadProducts(val || undefined);
+});
+
 const loadOptions = async () => {
   optionLoading.value = true;
   try {
-    const [supplierResult, productResult] = await Promise.all([
-      supplierApi.getList({ page: 1, size: 200 }),
-      productApi.getList({ page: 1, size: 200 }),
-    ]);
-    suppliers.value = (supplierResult?.list || []).filter(item => item.status === '启用');
-    products.value = (productResult?.list || []).filter(item => item.status !== '停用');
+    const result = await supplierApi.getList({ page: 1, size: 200 });
+    suppliers.value = (result?.list || []).filter(item => item.status === '启用');
   } catch {
-    ElMessage.warning('供应商或商品选项加载失败，请刷新后重试');
+    ElMessage.warning('供应商选项加载失败，请刷新后重试');
   } finally {
     optionLoading.value = false;
   }
@@ -196,7 +215,7 @@ const ensureEditable = async () => {
     const res = await purchaseApi.getDetail(Number(route.params.id));
     const detail = unwrapPurchaseDetail(res);
     if (!detail || !canEditPurchaseBeforeApproval(detail.status)) {
-      ElMessage.warning('只有待审批状态的采购单可以编辑');
+      ElMessage.warning('只有待审批或已驳回状态的采购单可以编辑');
       router.replace(`/purchases/${route.params.id}`);
       return false;
     }
@@ -239,8 +258,8 @@ const handleSave = async () => {
     try {
       const current = await purchaseApi.getDetail(Number(route.params.id));
       const detail = unwrapPurchaseDetail(current);
-      if (!detail || detail.status !== '待审批') {
-        ElMessage.warning('只有待审批状态的采购单才能编辑');
+      if (!detail || !canEditPurchaseBeforeApproval(detail.status)) {
+        ElMessage.warning('只有待审批或已驳回状态的采购单才能编辑');
         router.replace(`/purchases/${route.params.id}`);
         return;
       }

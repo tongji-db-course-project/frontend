@@ -1,3 +1,218 @@
-<template><div class="analytics"><header><div><p>{{ eyebrow }}</p><h1>{{ title }}</h1></div><button>导出报表</button></header><section class="filters"><select><option>全部门店</option></select><select><option>近 30 天</option><option>本周</option></select><input type="date" value="2026-08-07"><button>查询</button></section><section class="metrics"><article v-for="m in metrics" :key="m.label"><small>{{ m.label }}</small><strong>{{ m.value }}</strong><em>{{ m.note }}</em></article></section><section class="grid"><article class="card trend"><h2>{{ chartTitle }}</h2><div class="chart"><span v-for="(v,i) in bars" :key="i" :style="{height:`${v}%`}"><i>{{ labels[i] }}</i></span></div></article><article class="card rank"><h2>{{ rankTitle }}</h2><ol><li v-for="(r,i) in ranking" :key="r.name"><b>{{ i+1 }}</b><span>{{ r.name }}</span><em>{{ r.value }}</em></li></ol></article></section></div></template>
-<script setup lang="ts">withDefaults(defineProps<{title:string;eyebrow:string;chartTitle:string;rankTitle:string;metrics:{label:string;value:string;note:string}[];ranking:{name:string;value:string}[];bars?:number[];labels?:string[]}>(),{bars:()=>[42,58,51,76,68,88,79],labels:()=>['周一','周二','周三','周四','周五','周六','周日']})</script>
-<style scoped>.analytics{color:#29384f}.analytics>header{margin:3px 2px 14px;display:flex;justify-content:space-between;align-items:flex-end}.analytics header p{margin:0;color:#98a4b6;font-size:12px}.analytics h1{margin:3px 0 0;font-size:24px}.analytics header button,.filters button{height:36px;padding:0 14px;color:#fff;border:0;border-radius:7px;background:#1677ff}.filters{margin-bottom:12px;padding:12px;display:flex;gap:10px;border:1px solid #e6ebf2;border-radius:8px;background:#fff}.filters select,.filters input{height:34px;padding:0 10px;border:1px solid #dde4ed;border-radius:6px;background:#fff}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.metrics article,.card{border:1px solid #e6ebf2;border-radius:8px;background:#fff}.metrics article{padding:15px;display:grid}.metrics small{color:#8290a3;font-size:10px}.metrics strong{font-size:21px}.metrics em{color:#169c73;font-size:9px;font-style:normal}.grid{margin-top:12px;display:grid;grid-template-columns:2fr 1fr;gap:12px}.card{padding:16px}.card h2{margin:0 0 16px;font-size:14px}.chart{height:270px;padding:20px 15px 30px;display:flex;align-items:flex-end;gap:7%;border-bottom:1px solid #e8edf3;background:repeating-linear-gradient(to bottom,#f1f4f8 0,#f1f4f8 1px,transparent 1px,transparent 54px)}.chart span{position:relative;flex:1;max-width:42px;border-radius:5px 5px 0 0;background:linear-gradient(#69a9ff,#1677ff)}.chart i{position:absolute;bottom:-23px;left:50%;transform:translateX(-50%);white-space:nowrap;color:#8b97a8;font-size:9px;font-style:normal}.rank ol{margin:0;padding:0;list-style:none}.rank li{padding:13px 0;display:flex;align-items:center;gap:10px;border-bottom:1px solid #edf1f5;font-size:11px}.rank li b{width:22px;height:22px;display:grid;place-items:center;color:#1677ff;border-radius:6px;background:#eaf3ff}.rank li span{flex:1}.rank li em{font-style:normal;font-weight:600}@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}@media(max-width:600px){.metrics{grid-template-columns:1fr}.filters{flex-wrap:wrap}}</style>
+<template>
+  <div class="analytics">
+    <header>
+      <div>
+        <p>{{ eyebrow }}</p>
+        <h1>{{ title }}</h1>
+      </div>
+      <button>导出报表</button>
+    </header>
+    <section class="filters">
+      <select>
+        <option>全部门店</option></select
+      ><select>
+        <option>近 30 天</option>
+        <option>本周</option></select
+      ><input type="date" value="2026-08-07" /><button>查询</button>
+    </section>
+    <section class="metrics">
+      <article v-for="m in metrics" :key="m.label">
+        <small>{{ m.label }}</small
+        ><strong>{{ m.value }}</strong
+        ><em>{{ m.note }}</em>
+      </article>
+    </section>
+    <section class="grid">
+      <article class="card trend">
+        <h2>{{ chartTitle }}</h2>
+        <div class="chart">
+          <span v-for="(v, i) in bars" :key="i" :style="{ height: `${v}%` }"
+            ><i>{{ labels[i] }}</i></span
+          >
+        </div>
+      </article>
+      <article class="card rank">
+        <h2>{{ rankTitle }}</h2>
+        <ol>
+          <li v-for="(r, i) in ranking" :key="r.name">
+            <b>{{ i + 1 }}</b
+            ><span>{{ r.name }}</span
+            ><em>{{ r.value }}</em>
+          </li>
+        </ol>
+      </article>
+    </section>
+  </div>
+</template>
+<script setup lang="ts">
+withDefaults(
+  defineProps<{
+    title: string
+    eyebrow: string
+    chartTitle: string
+    rankTitle: string
+    metrics: { label: string; value: string; note: string }[]
+    ranking: { name: string; value: string }[]
+    bars?: number[]
+    labels?: string[]
+  }>(),
+  { bars: () => [42, 58, 51, 76, 68, 88, 79], labels: () => ['周一', '周二', '周三', '周四', '周五', '周六', '周日'] },
+)
+</script>
+<style scoped>
+.analytics {
+  color: #29384f;
+}
+.analytics > header {
+  margin: 3px 2px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.analytics header p {
+  margin: 0;
+  color: #98a4b6;
+  font-size: 12px;
+}
+.analytics h1 {
+  margin: 3px 0 0;
+  font-size: 24px;
+}
+.analytics header button,
+.filters button {
+  height: 36px;
+  padding: 0 14px;
+  color: #fff;
+  border: 0;
+  border-radius: 7px;
+  background: #1677ff;
+}
+.filters {
+  margin-bottom: 12px;
+  padding: 12px;
+  display: flex;
+  gap: 10px;
+  border: 1px solid #e6ebf2;
+  border-radius: 8px;
+  background: #fff;
+}
+.filters select,
+.filters input {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #dde4ed;
+  border-radius: 6px;
+  background: #fff;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.metrics article,
+.card {
+  border: 1px solid #e6ebf2;
+  border-radius: 8px;
+  background: #fff;
+}
+.metrics article {
+  padding: 15px;
+  display: grid;
+}
+.metrics small {
+  color: #8290a3;
+  font-size: 10px;
+}
+.metrics strong {
+  font-size: 21px;
+}
+.metrics em {
+  color: #169c73;
+  font-size: 9px;
+  font-style: normal;
+}
+.grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+}
+.card {
+  padding: 16px;
+}
+.card h2 {
+  margin: 0 0 16px;
+  font-size: 14px;
+}
+.chart {
+  height: 270px;
+  padding: 20px 15px 30px;
+  display: flex;
+  align-items: flex-end;
+  gap: 7%;
+  border-bottom: 1px solid #e8edf3;
+  background: repeating-linear-gradient(to bottom, #f1f4f8 0, #f1f4f8 1px, transparent 1px, transparent 54px);
+}
+.chart span {
+  position: relative;
+  flex: 1;
+  max-width: 42px;
+  border-radius: 5px 5px 0 0;
+  background: linear-gradient(#69a9ff, #1677ff);
+}
+.chart i {
+  position: absolute;
+  bottom: -23px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  color: #8b97a8;
+  font-size: 9px;
+  font-style: normal;
+}
+.rank ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rank li {
+  padding: 13px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #edf1f5;
+  font-size: 11px;
+}
+.rank li b {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  color: #1677ff;
+  border-radius: 6px;
+  background: #eaf3ff;
+}
+.rank li span {
+  flex: 1;
+}
+.rank li em {
+  font-style: normal;
+  font-weight: 600;
+}
+@media (max-width: 900px) {
+  .metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+  .filters {
+    flex-wrap: wrap;
+  }
+}
+</style>

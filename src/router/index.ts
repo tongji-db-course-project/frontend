@@ -1,4 +1,5 @@
 import {createRouter,createWebHistory} from 'vue-router'
+import { normalizeRoleName } from '../utils/roles'
 
 const router = createRouter({
     //使用浏览器历史记录模式
@@ -73,7 +74,7 @@ router.beforeEach((to,_from,next)=>{
     // 前端可见性按功能点约束；真正的安全边界仍必须由后端鉴权保证。
     if(token){
         let roleName=''
-        try{ roleName=JSON.parse(localStorage.getItem('userInfo')||'{}').roleName||'' }catch{}
+        try{ roleName=normalizeRoleName(JSON.parse(localStorage.getItem('userInfo')||'{}').roleName||'') }catch{}
         const allowedPrefixes:Record<string,string[]>={
             '采购员':['/dashboard','/product','/purchase-suggestions','/purchases','/purchase-returns','/inventory','/members'],
             '收银员':['/dashboard','/product','/purchases','/purchase-returns','/inventory'],

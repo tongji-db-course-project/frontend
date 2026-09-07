@@ -16,7 +16,7 @@ const normalizeCategory = (item: RawCategory): ProductCategory => ({
   categoryId: item.categoryId ?? item.categorY_ID ?? 0,
   categoryName: item.categoryName ?? item.categorY_NAME ?? '',
   categoryDesc: item.categoryDesc ?? item.categorY_DESC ?? null,
-  status: item.status === '停用' ? '停用' : '启用',
+  status: item.status === '禁用' ? '禁用' : '启用',
 })
 
 export const categoryApi = {

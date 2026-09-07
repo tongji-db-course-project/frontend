@@ -15,7 +15,7 @@
       <div class="biz-toolbar">
         <el-input v-model="query.keyword" placeholder="名称、联系人或手机号" clearable :prefix-icon="Search" @keyup.enter="search" />
         <el-select v-model="query.creditLevel" placeholder="全部信用等级" clearable>
-          <el-option v-for="level in ['A','B','C']" :key="level" :label="`${level} 级`" :value="level" />
+          <el-option v-for="level in ['A','B','C','D']" :key="level" :label="`${level} 级`" :value="level" />
         </el-select>
         <el-select v-model="query.status" placeholder="全部状态" clearable>
           <el-option label="启用" value="启用" /><el-option label="禁用" value="禁用" />
@@ -46,7 +46,7 @@
           <el-form-item label="联系人" prop="contactName"><el-input v-model="form.contactName" maxlength="50" /></el-form-item>
           <el-form-item label="联系电话" prop="phone"><el-input v-model="form.phone" maxlength="20" /></el-form-item>
           <el-form-item label="邮箱" prop="email"><el-input v-model="form.email" maxlength="100" /></el-form-item>
-          <el-form-item label="信用等级"><el-select v-model="form.creditLevel"><el-option v-for="level in ['A','B','C']" :key="level" :label="`${level} 级`" :value="level" /></el-select></el-form-item>
+          <el-form-item label="信用等级"><el-select v-model="form.creditLevel"><el-option v-for="level in ['A','B','C','D']" :key="level" :label="`${level} 级`" :value="level" /></el-select></el-form-item>
           <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio value="启用">启用</el-radio><el-radio value="禁用">禁用</el-radio></el-radio-group></el-form-item>
           <el-form-item label="结算周期（天）"><el-input-number v-model="form.paymentCycle" :min="0" :max="3650" controls-position="right" /></el-form-item>
           <el-form-item label="最小起订量"><el-input-number v-model="form.minOrderQty" :min="0" controls-position="right" /></el-form-item>

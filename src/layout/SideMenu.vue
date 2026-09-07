@@ -58,8 +58,9 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { normalizeRoleName } from '../utils/roles'
 import {
-  Box, Coin, DataAnalysis, Goods, HomeFilled, List, Setting,
+  Box, DataAnalysis, Goods, HomeFilled, List, OfficeBuilding, Setting,
   ShoppingCart, Search, User,
 } from '@element-plus/icons-vue'
 
@@ -77,7 +78,13 @@ const menuItems = [
     children: [
       { name: '商品分类', path: '/categories' },
       { name: '商品管理', path: '/product' },
+    ],
+  },
+  {
+    name: '供应商中心', icon: OfficeBuilding,
+    children: [
       { name: '供应商管理', path: '/suppliers' },
+      { name: '供应商结算', path: '/settlements' },
     ],
   },
   {
@@ -123,12 +130,6 @@ const menuItems = [
     ],
   },
   {
-    name: '财务管理', icon: Coin,
-    children: [
-      { name: '供应商结算', path: '/settlements' },
-    ],
-  },
-  {
     name: '系统管理', icon: Setting,
     children: [
       { name: '员工管理', path: '/system/users' },
@@ -144,7 +145,7 @@ const rolePaths = {
 }
 
 const visibleMenuItems = computed(() => {
-  const roleName = authStore.userInfo?.roleName || authStore.roleName
+  const roleName = normalizeRoleName(authStore.userInfo?.roleName || authStore.roleName)
   const allowed = rolePaths[roleName]
   if (!allowed) return menuItems
   return menuItems.flatMap(item => {
