@@ -87,7 +87,6 @@ import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { purchaseApi } from '../../api/purchase';
-import { inventoryApi } from '../../api/inventory';
 import { useAuthStore } from '../../stores/auth';
 import { canApproveOrStockIn, canCancelPurchaseBeforeApproval, canEditPurchaseBeforeApproval } from '../../utils/purchasePermissions';
 import type { PurchaseOrder } from '../../types/purchase';
@@ -160,28 +159,10 @@ const openStockIn = async () => {
       ElMessage.warning('只有管理员、采购员可以进行采购入库');
       return;
     }
-    warehouses.value = (await inventoryApi.getWarehouses() || []).filter(item => item.status !== '禁用');
-    if (!warehouses.value.length) { ElMessage.warning('没有可用仓库，无法入库'); return; }
-    stockInWarehouseId.value = warehouses.value.length === 1 ? warehouses.value[0]?.warehouseId || null : null;
-    stockInDate.value = new Date().toISOString().split('T')[0];
-    stockInRemark.value = '采购入库';
-    stockInItems.value = (detail.value.details || []).map(item => ({ productId: item.productId, productName: item.productName, orderedQuantity: item.purchaseQuantity, stockInQuantity: item.purchaseQuantity }));
-    stockInVisible.value = true;
-  } catch (error) {
-    console.error(error);
-    ElMessage.error('仓库列表加载失败');
-  }
-};
-
-const submitStockIn = async () => {
-  if (!detail.value || !stockInWarehouseId.value || hasStockInDifference.value) return;
-  stockingIn.value = true;
-  try {
     await purchaseApi.stockIn(detail.value.orderId, {
       operatorId: currentUserId(),
-      warehouseId: stockInWarehouseId.value,
-      stockInDate: stockInDate.value,
-      details: stockInItems.value.map((item) => ({
+      stockInDate: new Date().toISOString().split('T')[0],
+      details: (detail.value.details || []).map((item) => ({
         productId: item.productId,
         stockInQuantity: item.stockInQuantity,
       })),

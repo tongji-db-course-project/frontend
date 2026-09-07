@@ -30,7 +30,6 @@
           <p v-if="member"><el-tag type="success">{{ member.levelName || '普通会员' }}</el-tag><b>{{ member.memberName }}</b><span>{{ member.phone }} · {{ member.points ?? 0 }} 积分</span><el-button link type="danger" @click="removeMember">移除</el-button></p>
         </div>
         <div class="checkout-options">
-          <label>出库仓库</label><el-select v-model="warehouseId" placeholder="请选择仓库" :loading="warehouseLoading"><el-option v-for="item in warehouses" :key="item.warehouseId" :label="item.warehouseName" :value="item.warehouseId" /></el-select>
           <label>兑换积分</label><el-input-number v-model="redeemPoints" :min="0" :max="member?.points ?? 0" :precision="0" :disabled="!member" />
         </div>
         <el-alert title="支付方式：会员卡扣款。商品价格、优惠、积分和最终实付金额由后端统一结算。" type="info" :closable="false" show-icon />
@@ -69,9 +68,6 @@ const cart = ref<CartItem[]>([])
 const memberPhone = ref('')
 const member = ref<Member | null>(null)
 const memberLoading = ref(false)
-const warehouseId = ref<number | null>(null)
-const warehouses = ref<Warehouse[]>([])
-const warehouseLoading = ref(false)
 const redeemPoints = ref(0)
 const submitting = ref(false)
 const lastSale = ref<SaleOrder | null>(null)
@@ -127,8 +123,6 @@ async function checkout() {
   try {
     lastSale.value = await saleApi.create({
       memberId: member.value?.memberId,
-      warehouseId: warehouseId.value,
-      payType: '会员卡',
       redeemPoints: redeemPoints.value,
       items: cart.value.map(item => ({ productId: item.product.productId, quantity: item.quantity })),
     })

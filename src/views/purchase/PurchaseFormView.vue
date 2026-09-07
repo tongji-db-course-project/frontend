@@ -107,8 +107,9 @@ const products = ref<ProductListItem[]>([]);
 const currentUserId = computed(() => Number(authStore.userInfo?.userId || 0));
 const applicantLabel = computed(() => authStore.userInfo?.realName || authStore.userInfo?.username || (form.applicantId ? `用户 #${form.applicantId}` : '未识别当前用户'));
 
-const clampPositiveInt = (value: number | string | null | undefined, fallback = 1) => {
-  const num = Number(value);
+const clampPositiveInt = (value: unknown, fallback = 1) => {
+  const normalized = Array.isArray(value) ? value[0] : value;
+  const num = Number(normalized);
   if (!Number.isFinite(num) || num < 1) return fallback;
   return Math.floor(num);
 };
@@ -142,15 +143,15 @@ const selectProduct = (row: PurchaseFormDto['details'][number]) => {
 const applyInventorySuggestion = async () => {
   if (isEdit.value || route.query.source !== 'inventory-warning') return;
   const productId = Number(route.query.productId);
-  if (!productId) return;
-  const detail = await productApi.getDetail(productId);
-  if (!detail) return;
-  form.supplierId = detail.supplierId || form.supplierId;
-  await loadProducts(form.supplierId || undefined);
-  // 当前库存为列表接口聚合字段，从按供应商过滤后的列表里取
-  const product = products.value.find(item => item.productId === productId);
+  let product = products.value.find(item => item.productId === productId);
+  if (!product && productId > 0) {
+    const detail = await productApi.getDetail(productId);
+    product = { ...detail, currentStock: 0 };
+    products.value.push(product);
+  }
   if (!product) return;
-  const suggestedQuantity = Math.max(1, Number(product.stockWarning || 0) - Number(product.currentStock || 0));
+  const suggestedQuantity = clampPositiveInt(route.query.quantity, Math.max(1, Number(product.stockWarning || 0) * 2 - Number(product.currentStock || 0)));
+  form.supplierId = clampPositiveInt(route.query.supplierId, product.supplierId);
   form.details = [{
     productId: product.productId,
     productName: product.productName,

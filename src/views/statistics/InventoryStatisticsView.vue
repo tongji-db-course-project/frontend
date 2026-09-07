@@ -1,9 +1,21 @@
 <template>
   <div class="biz-page">
     <PageHeader
-      eyebrow="数据中心 · 库存运营"
-      title="库存周转率监控"
-      description="统计周期内商品周转情况，识别慢周转与呆滞积压商品，辅助经营决策"
+      eyebrow="数据中心 · 库存结构"
+      title="库存分析"
+      description="汇总系统总仓的库存商品、库存总量和预警商品"
+    >
+      <el-button :icon="Refresh" :loading="loading" @click="load">刷新</el-button>
+    </PageHeader>
+
+    <el-alert
+      v-if="!available"
+      title="库存分析接口请求失败"
+      description="请确认 Apifox 已为 GET /statistics/inventory 配置 code=200 的响应示例。"
+      type="warning"
+      show-icon
+      :closable="false"
+      style="margin-bottom: 14px"
     />
 
     <section class="biz-card filter-card">
@@ -69,45 +81,28 @@
     </section>
 
     <section class="biz-stats">
-      <StatCard label="全部商品数量" :value="total" :icon="Goods" />
-      <StatCard label="本页慢周转数量" :value="slowCount" :icon="Timer" tone="orange" />
-      <StatCard label="本页呆滞数量" :value="agedCount" :icon="WarningFilled" tone="red" />
-      <StatCard label="本页呆滞标记数量" :value="stagnantCount" :icon="Document" tone="purple" />
+      <StatCard label="库存商品" :value="data?.productCount ?? 0" :icon="Goods" />
+      <StatCard label="库存总量" :value="data?.totalStock ?? 0" :icon="Histogram" tone="green" />
+      <StatCard label="预警商品" :value="data?.warningProductCount ?? 0" :icon="WarningFilled" tone="orange" />
+      <StatCard label="系统仓库" value="总仓" :icon="OfficeBuilding" tone="purple" />
     </section>
 
-    <section class="biz-card table-card">
-      <el-table v-loading="loading" :data="items" stripe border class="biz-table" empty-text="暂无符合条件的数据">
-        <el-table-column prop="productName" label="商品名称" min-width="180" />
-        <el-table-column prop="saleQuantity" label="销售数量" width="120" align="right" />
-        <el-table-column prop="openingStock" label="期初库存" width="120" align="right" />
-        <el-table-column prop="closingStock" label="期末库存" width="120" align="right" />
-        <el-table-column label="平均库存" width="120" align="right">
-          <template #default="{ row }">{{ formatValue(row.averageStock) }}</template>
-        </el-table-column>
-        <el-table-column label="周转次数" width="120" align="right">
-          <template #default="{ row }">{{ formatValue(row.turnoverTimes) }}</template>
-        </el-table-column>
-        <el-table-column label="是否呆滞" width="110" align="center">
-          <template #default="{ row }">{{ row.stagnant ? '是' : '否' }}</template>
-        </el-table-column>
-        <el-table-column label="状态" width="130" align="center">
-          <template #default="{ row }">
-            <el-tag :type="statusType(row.status)">{{ statusText(row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div class="biz-pagination">
-        <el-pagination
-          background
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-          v-model:current-page="query.page"
-          v-model:page-size="query.pageSize"
-           :page-sizes="[20]"
-          @change="load"
-        />
-      </div>
+    <section v-loading="loading" class="biz-card inventory-summary">
+      <h3>指标说明</h3>
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="库存商品">
+          当前库存表中去重后的商品数量
+        </el-descriptions-item>
+        <el-descriptions-item label="库存总量">
+          系统总仓当前库存数量之和
+        </el-descriptions-item>
+        <el-descriptions-item label="预警商品">
+          当前库存低于商品库存预警值的商品数量
+        </el-descriptions-item>
+        <el-descriptions-item label="系统仓库">
+          单仓库模式统一使用总仓
+        </el-descriptions-item>
+      </el-descriptions>
     </section>
   </div>
 </template>

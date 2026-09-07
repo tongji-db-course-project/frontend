@@ -10,7 +10,7 @@ export const purchaseReturnApi = {
   create: (data: SavePurchaseReturnPayload) => request.post<unknown, PurchaseReturn>(path, data),
   update: (id: number, data: SavePurchaseReturnPayload) => request.put<unknown, PurchaseReturn>(`${path}/${id}`, data),
   approve: (id: number, approverId: number, remark?: string) => request.post<unknown, PurchaseReturn>(`${path}/${id}/approve`, { approverId, remark }),
-  complete: (id: number, operatorId: number, warehouseId: number, remark?: string) => request.post<unknown, PurchaseReturn>(`${path}/${id}/complete`, { operatorId, warehouseId, remark }),
+  complete: (id: number, operatorId: number, remark?: string) => request.post<unknown, PurchaseReturn>(`${path}/${id}/complete`, { operatorId, remark }),
   remove: (id: number) => request.delete<unknown, null>(`${path}/${id}`),
   getTimeline: (id: number) => request.get<unknown, OrderStatusLog[]>(`${path}/${id}/timeline`),
 }

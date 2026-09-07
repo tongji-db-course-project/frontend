@@ -1,6 +1,6 @@
 <template>
   <div class="biz-page">
-    <PageHeader eyebrow="库存管理 · 实时库存" title="当前库存" description="按商品和仓库查询库存，及时处理库存预警" />
+    <PageHeader eyebrow="库存管理 · 实时库存" title="当前库存" description="统一查询系统库存，及时处理库存预警" />
     <section class="biz-stats">
       <StatCard label="库存记录" :value="total" :icon="Box" />
       <StatCard label="本页库存总量" :value="stockTotal" :icon="GoodsFilled" tone="green" />
@@ -10,14 +10,12 @@
     <section class="biz-card">
       <div class="biz-toolbar">
         <el-input v-model="query.keyword" placeholder="商品名称或条码" clearable :prefix-icon="Search" @keyup.enter="search" />
-        <el-select v-model="query.warehouseId" placeholder="全部仓库" clearable><el-option v-for="item in warehouses" :key="item.warehouseId" :label="item.warehouseName" :value="item.warehouseId" /></el-select>
         <el-checkbox v-model="query.warningOnly">只看库存预警</el-checkbox>
         <el-button type="primary" @click="search">查询</el-button><el-button @click="reset">重置</el-button>
         <span class="biz-toolbar__summary">共 {{ total }} 条库存记录</span>
       </div>
       <el-table v-loading="loading" :data="items" row-key="inventoryId" stripe border class="biz-table">
         <el-table-column label="商品信息" min-width="220"><template #default="{ row }"><div class="biz-product"><span class="biz-product__avatar">{{ (row.productName || '商').slice(0,1) }}</span><div><b>{{ row.productName || `商品 #${row.productId}` }}</b><small>{{ row.barcode || '-' }} · {{ row.specification || '规格未提供' }}</small></div></div></template></el-table-column>
-        <el-table-column label="仓库" min-width="150"><template #default="{ row }">{{ row.warehouseName || `仓库 #${row.warehouseId}` }}</template></el-table-column>
         <el-table-column label="当前库存" width="125" align="right"><template #default="{ row }"><strong :class="statusOf(row) === '缺货' ? 'biz-negative' : ''">{{ formatQuantity(row.currentStock, row.unit || '') }}</strong></template></el-table-column>
         <el-table-column label="预警值" width="110" align="right"><template #default="{ row }">{{ row.stockWarning == null ? '-' : formatQuantity(row.stockWarning, row.unit || '') }}</template></el-table-column>
         <el-table-column label="库存状态" width="100" align="center"><template #default="{ row }"><span class="biz-status" :class="statusTone(statusOf(row))">{{ statusOf(row) }}</span></template></el-table-column>
@@ -39,28 +37,30 @@ import StatCard from '../../components/StatCard.vue'
 import { inventoryApi } from '../../api/inventory'
 import { useAuthStore } from '../../stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { InventoryItem, InventoryQuery, InventoryStatus, Warehouse } from '../../types/inventory'
+import type { InventoryItem, InventoryQuery, InventoryStatus } from '../../types/inventory'
 import { formatDateTime, formatQuantity } from '../../utils/format'
 import { normalizeRoleName } from '../../utils/roles'
 
-const items = ref<InventoryItem[]>([]), warehouses = ref<Warehouse[]>([])
+const items = ref<InventoryItem[]>([])
 const router = useRouter()
 const loading = ref(false), total = ref(0)
-const auth=useAuthStore(),canCount=computed(()=>normalizeRoleName(auth.userInfo?.roleName||auth.roleName)==='管理员')
+const auth=useAuthStore(),canCount=computed(()=>{
+  const roleName=auth.userInfo?.roleName||auth.roleName
+  return roleName==='系统管理员'||roleName==='管理员'
+})
 const countVisible=ref(false),counting=ref(false),countTarget=ref<InventoryItem|null>(null),actualStock=ref(0),countRemark=ref('')
 const countChange=computed(()=>actualStock.value-Number(countTarget.value?.currentStock||0))
-const query = reactive<InventoryQuery>({ page: 1, size: 10, keyword: '', warehouseId: undefined, warningOnly: false })
+const query = reactive<InventoryQuery>({ page: 1, size: 10, keyword: '', warningOnly: false })
 const statusOf = (item: InventoryItem): InventoryStatus => item.currentStock <= 0 ? '缺货' : item.stockWarning != null && item.currentStock <= item.stockWarning ? '预警' : '正常'
 const statusTone = (status: InventoryStatus) => status === '正常' ? 'green' : status === '预警' ? 'orange' : 'red'
 const stockTotal = computed(() => items.value.reduce((sum, item) => sum + item.currentStock, 0))
 const warningCount = computed(() => items.value.filter(item => statusOf(item) === '预警').length)
 const outOfStockCount = computed(() => items.value.filter(item => statusOf(item) === '缺货').length)
 function createPurchase(item: InventoryItem) { router.push({ path: '/purchases/create', query: { productId: String(item.productId), source: 'inventory-warning' } }) }
-async function load() { loading.value = true; try { const params = { ...query, keyword: query.keyword || undefined, warehouseId: query.warehouseId || undefined }; const result = query.warningOnly ? await inventoryApi.getWarningList(params) : await inventoryApi.getList(params); items.value = result?.list ?? []; total.value = result?.total ?? 0 } catch { items.value = []; total.value = 0 } finally { loading.value = false } }
-async function loadWarehouses() { try { warehouses.value = await inventoryApi.getWarehouses() ?? [] } catch { warehouses.value = [] } }
+async function load() { loading.value = true; try { const params = { ...query, keyword: query.keyword || undefined }; const result = query.warningOnly ? await inventoryApi.getWarningList(params) : await inventoryApi.getList(params); items.value = result?.list ?? []; total.value = result?.total ?? 0 } catch { items.value = []; total.value = 0 } finally { loading.value = false } }
 function search() { query.page = 1; load() }
-function reset() { Object.assign(query, { page: 1, size: 10, keyword: '', warehouseId: undefined, warningOnly: false }); load() }
+function reset() { Object.assign(query, { page: 1, size: 10, keyword: '', warningOnly: false }); load() }
 function openCount(row:InventoryItem){countTarget.value=row;actualStock.value=row.currentStock;countRemark.value='';countVisible.value=true}
-async function submitCount(){if(!countTarget.value||countChange.value===0)return;await ElMessageBox.confirm(`确认按实际库存 ${actualStock.value} 调整吗？`,'确认盘点结果',{type:'warning'});counting.value=true;try{await inventoryApi.adjust({productId:countTarget.value.productId,changeQty:countChange.value,recordType:'盘点',remark:countRemark.value||'库存盘点调整',sourceNo:`PD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}`});ElMessage.success('盘点库存已调整并生成流水');countVisible.value=false;await load()}finally{counting.value=false}}
-onMounted(() => { load(); loadWarehouses() })
+async function submitCount(){if(!countTarget.value||countChange.value===0)return;await ElMessageBox.confirm(`确认按实际库存 ${actualStock.value} 调整吗？`,'确认盘点结果',{type:'warning'});counting.value=true;try{const now=new Date();await inventoryApi.adjust({productId:countTarget.value.productId,changeQty:countChange.value,actualStock:actualStock.value,recordType:'盘点',remark:countRemark.value||'库存盘点调整',sourceNo:`PD-${now.toISOString().replace(/[-:T.Z]/g,'').slice(0,14)}`});ElMessage.success('盘点库存已调整并生成流水');countVisible.value=false;await load()}finally{counting.value=false}}
+onMounted(load)
 </script>

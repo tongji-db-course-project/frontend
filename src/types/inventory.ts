@@ -1,13 +1,5 @@
 import type { PageQuery } from './common'
 
-export interface Warehouse {
-  warehouseId: number
-  warehouseName: string
-  address?: string | null
-  status?: '启用' | '禁用' | null
-  createTime?: string | null
-}
-
 export interface InventoryItem {
   inventoryId: number
   productId: number
@@ -19,13 +11,12 @@ export interface InventoryItem {
   warehouseId: number
   warehouseName?: string
   currentStock: number
-  lastUpdateTime: string
+  lastUpdateTime: string | null
 }
 
 export type InventoryStatus = '正常' | '预警' | '缺货'
 
 export interface InventoryQuery extends PageQuery {
-  warehouseId?: number
   warningOnly?: boolean
 }
 
@@ -52,14 +43,18 @@ export interface InventoryRecordQuery extends PageQuery {
   endDate?: string
 }
 
-export interface PurchaseSuggestion {
+export interface PurchaseSuggestionItem {
   productId: number
   productName: string
-  supplierId: number
-  supplierName?: string | null
   currentStock: number
   stockWarning: number
   suggestedQuantity: number
+}
+
+export interface SupplierPurchaseSuggestion {
+  supplierId: number
+  supplierName: string
+  items: PurchaseSuggestionItem[]
 }
 
 export interface InventoryCountTask {
