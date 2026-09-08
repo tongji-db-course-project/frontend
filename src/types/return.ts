@@ -1,6 +1,6 @@
 import type { PageQuery } from './common'
 
-export type ReturnStatus = '待处理' | '已完成' | '已拒绝'
+export type ReturnStatus = '待处理' | '已审核' | '已完成' | '已拒绝'
 
 export interface ReturnOrder {
   returnId: number
@@ -41,8 +41,6 @@ export interface ReturnQuery extends PageQuery {
 export interface CreateReturnPayload {
   saleId: number
   memberId?: number | null
-  operatorId: number
-  returnDate: string
   remark?: string | null
   details: Array<{
     productId: number
