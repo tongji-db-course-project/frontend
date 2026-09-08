@@ -16,7 +16,7 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: localStorage.getItem('token') || '',
     userInfo: loadSavedUser(),
-    roleName: localStorage.getItem('currentRoleName') || '管理员',
+    roleName: localStorage.getItem('currentRoleName') || '',
   }),
   actions: {
     async login(params: LoginParams) {
@@ -40,7 +40,7 @@ export const useAuthStore = defineStore('auth', {
     logout() {
       this.token = ''
       this.userInfo = null
-      this.roleName = '管理员'
+      this.roleName = ''
       localStorage.removeItem('token')
       localStorage.removeItem('userInfo')
       localStorage.removeItem('currentRoleName')

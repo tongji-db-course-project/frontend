@@ -1,5 +1,13 @@
 import type { PageQuery } from './common'
 
+export interface Warehouse {
+  warehouseId: number
+  warehouseName: string
+  address?: string | null
+  status?: '启用' | '禁用' | null
+  createTime?: string | null
+}
+
 export interface InventoryItem {
   inventoryId: number
   productId: number

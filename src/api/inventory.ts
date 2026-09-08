@@ -1,6 +1,6 @@
 import request from '../utils/request'
 import type { PageResult } from '../types/common'
-import type { InventoryCountTask, InventoryItem, InventoryQuery, InventoryRecord, InventoryRecordQuery, SupplierPurchaseSuggestion } from '../types/inventory'
+import type { InventoryCountTask, InventoryItem, InventoryQuery, InventoryRecord, InventoryRecordQuery, SupplierPurchaseSuggestion, Warehouse } from '../types/inventory'
 
 export const inventoryApi = {
   getList(params: InventoryQuery) {
@@ -11,6 +11,9 @@ export const inventoryApi = {
   },
   getRecords(params: InventoryRecordQuery) {
     return request.get<unknown, PageResult<InventoryRecord>>('/inventory/records', { params })
+  },
+  getWarehouses() {
+    return request.get<unknown, Warehouse[]>('/warehouses')
   },
   adjust(data: { productId: number; changeQty: number; actualStock?: number; recordType: string; remark?: string; sourceNo?: string }) {
     return request.put<unknown, InventoryItem>('/inventory/adjust', data)

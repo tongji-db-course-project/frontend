@@ -20,13 +20,13 @@ export const returnApi = {
   create(data: CreateReturnPayload) {
     return request.post<unknown, ReturnOrder>(RETURN_PATH, data)
   },
-  confirm(returnId: number) {
-    return request.post<unknown, ReturnDetail>(`${RETURN_PATH}/${returnId}/confirm`)
+  approve(returnId: number) {
+    return request.post<unknown, ReturnDetail>(`${RETURN_PATH}/${returnId}/approve`)
   },
-  reject(returnId: number, data: { approverId: number; remark?: string | null }) {
-    return request.post<unknown, ReturnDetail>(`${RETURN_PATH}/${returnId}/reject`, {
-      operatorId: data.approverId,
-      remark: data.remark,
-    })
+  complete(returnId: number) {
+    return request.post<unknown, ReturnDetail>(`${RETURN_PATH}/${returnId}/complete`)
+  },
+  reject(returnId: number, remark?: string | null) {
+    return request.post<unknown, ReturnDetail>(`${RETURN_PATH}/${returnId}/reject`, { remark })
   },
 }

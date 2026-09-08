@@ -37,7 +37,6 @@ export interface PurchaseReturnQuery extends PageQuery {
 
 export interface SavePurchaseReturnPayload {
   purchaseId: number
-  operatorId: number
   returnDate?: string
   details: Array<{ productId: number; quantity: number }>
   remark?: string | null

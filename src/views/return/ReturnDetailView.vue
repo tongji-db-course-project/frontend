@@ -2,12 +2,15 @@
   <div class="biz-page">
     <PageHeader eyebrow="销售管理 · 售后详情" :title="detail?.returnNo || '退货单详情'" description="查看原销售单、退款金额和退货商品">
       <el-button :icon="ArrowLeft" @click="router.push('/returns')">返回列表</el-button>
-      <template v-if="detail && detail.status === '待处理'">
-        <el-popconfirm title="确认批准该退货申请？确认后将立即入库并完成退款。" confirm-button-text="批准" cancel-button-text="取消" width="280" @confirm="approve">
+      <template v-if="detail && detail.status === '待处理' && canReview">
+        <el-popconfirm title="确认批准该退货申请？批准后将等待仓管办理入库。" confirm-button-text="批准" cancel-button-text="取消" width="280" @confirm="approve">
           <template #reference><el-button type="success" :loading="busy">批准退货</el-button></template>
         </el-popconfirm>
         <el-button type="danger" :loading="busy" @click="openReject">拒绝退货</el-button>
       </template>
+      <el-popconfirm v-if="detail && detail.status === '已审核' && canStockIn" title="确认商品已验收并办理退货入库？入库后将完成退款和积分冲销。" confirm-button-text="入库" cancel-button-text="取消" width="300" @confirm="complete">
+        <template #reference><el-button type="success" :loading="busy">确认入库</el-button></template>
+      </el-popconfirm>
     </PageHeader>
     <div v-loading="loading">
       <template v-if="detail">
@@ -34,31 +37,40 @@
 import { computed, onMounted, ref } from 'vue'
 import { ArrowLeft, Box, Goods, Money, RefreshLeft } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { useAuthStore } from '../../stores/auth'
 import { useRoute, useRouter } from 'vue-router'
 import PageHeader from '../../components/PageHeader.vue'
 import StatCard from '../../components/StatCard.vue'
 import { returnApi } from '../../api/return'
 import type { ReturnDetail } from '../../types/return'
 import { formatDateTime, formatMoney } from '../../utils/format'
+import { canReviewSalesReturn, canStockInSalesReturn } from '../../utils/returnPermissions'
 
 const route = useRoute(), router = useRouter(), returnId = Number(route.params.id)
 const detail = ref<ReturnDetail | null>(null), loading = ref(false), busy = ref(false)
 const rejectVisible = ref(false), rejectRemark = ref('')
 const itemQuantity = computed(() => detail.value?.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0)
+const canReview = computed(() => canReviewSalesReturn())
+const canStockIn = computed(() => canStockInSalesReturn())
 async function load() { if (!Number.isFinite(returnId)) return; loading.value = true; try { detail.value = await returnApi.getDetail(returnId) } catch { detail.value = null } finally { loading.value = false } }
 async function approve() {
   if (!detail.value) return;
   busy.value = true;
-  try { await returnApi.confirm(detail.value.returnId); ElMessage.success('已批准退货'); await load() }
+  try { await returnApi.approve(detail.value.returnId); ElMessage.success('已批准退货，等待入库'); await load() }
   catch (e: any) { ElMessage.error(e?.response?.data?.message || '批准失败，请稍后重试') }
+  finally { busy.value = false }
+}
+async function complete() {
+  if (!detail.value) return;
+  busy.value = true;
+  try { await returnApi.complete(detail.value.returnId); ElMessage.success('退货已入库，退款和积分冲销已完成'); await load() }
+  catch (e: any) { ElMessage.error(e?.response?.data?.message || '入库失败，请稍后重试') }
   finally { busy.value = false }
 }
 function openReject() { rejectRemark.value = ''; rejectVisible.value = true }
 async function submitReject() {
   if (!detail.value) return;
   busy.value = true;
-  try { await returnApi.reject(detail.value.returnId, { approverId: Number(useAuthStore().userInfo?.userId || 0), remark: rejectRemark.value || null }); ElMessage.success('已拒绝该退货申请'); rejectVisible.value = false; await load() }
+  try { await returnApi.reject(detail.value.returnId, rejectRemark.value || null); ElMessage.success('已拒绝该退货申请'); rejectVisible.value = false; await load() }
   catch (e: any) { ElMessage.error(e?.response?.data?.message || '拒绝失败，请稍后重试') }
   finally { busy.value = false }
 }

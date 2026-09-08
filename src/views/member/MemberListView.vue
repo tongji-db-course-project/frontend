@@ -126,6 +126,7 @@
               <i />
               <div class="order-main"><strong>{{ order.saleNo || `订单 #${order.saleId}` }}</strong><small>{{ formatDateTime(order.saleDate) }}</small></div>
               <div class="order-amount"><strong>{{ formatMoney(order.paidAmount ?? order.totalAmount) }}</strong><small>{{ order.status || '—' }}</small></div>
+              <el-button v-if="order.status === '已完成' && canCreateReturn" link type="primary" @click="startReturn(order)">发起退货</el-button>
             </article>
             <div v-if="!ordersLoading && !orders.length" class="empty">暂无消费记录</div>
           </div>
@@ -141,9 +142,11 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { Plus, Search } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
 import { memberApi } from '../../api/member'
 import type { Member, MemberDto, MemberQuery } from '../../types/member'
 import type { SaleOrder } from '../../types/sale'
+import { canCreateSalesReturn } from '../../utils/returnPermissions'
 
 interface MemberForm extends Required<Pick<MemberDto, 'memberName' | 'phone'>> {
   gender: '男' | '女' | '未知'
@@ -151,6 +154,7 @@ interface MemberForm extends Required<Pick<MemberDto, 'memberName' | 'phone'>> {
 }
 
 const members = ref<Member[]>([])
+const router = useRouter()
 const total = ref(0)
 const loading = ref(false)
 const saving = ref(false)
@@ -178,6 +182,7 @@ const rules: FormRules<MemberForm> = {
 
 const pageTotalAmount = computed(() => members.value.reduce((sum, item) => sum + Number(item.totalAmount || 0), 0))
 const pagePoints = computed(() => members.value.reduce((sum, item) => sum + Number(item.points || 0), 0))
+const canCreateReturn = computed(() => canCreateSalesReturn())
 
 function maskPhone(phone?: string | null) {
   return phone?.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') || '—'
@@ -304,6 +309,11 @@ async function loadOrders() {
   } finally {
     ordersLoading.value = false
   }
+}
+
+function startReturn(order: SaleOrder) {
+  detailVisible.value = false
+  void router.push({ path: '/returns', query: { saleId: String(order.saleId), saleNo: order.saleNo } })
 }
 
 onMounted(loadMembers)

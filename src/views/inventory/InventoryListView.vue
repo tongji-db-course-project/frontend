@@ -20,7 +20,7 @@
         <el-table-column label="预警值" width="110" align="right"><template #default="{ row }">{{ row.stockWarning == null ? '-' : formatQuantity(row.stockWarning, row.unit || '') }}</template></el-table-column>
         <el-table-column label="库存状态" width="100" align="center"><template #default="{ row }"><span class="biz-status" :class="statusTone(statusOf(row))">{{ statusOf(row) }}</span></template></el-table-column>
         <el-table-column label="最后更新" width="170"><template #default="{ row }">{{ formatDateTime(row.lastUpdateTime) }}</template></el-table-column>
-        <el-table-column label="操作" width="180" fixed="right"><template #default="{row}"><el-button v-if="statusOf(row)!=='正常'" link type="warning" @click="createPurchase(row)">发起采购</el-button><el-button v-if="canCount" link type="primary" @click="openCount(row)">库存盘点</el-button></template></el-table-column>
+        <el-table-column label="操作" width="180" fixed="right"><template #default="{row}"><el-button v-if="statusOf(row)!=='正常' && canCreatePurchase()" link type="warning" @click="createPurchase(row)">发起采购</el-button><el-button v-if="canCount" link type="primary" @click="openCount(row)">库存盘点</el-button></template></el-table-column>
       </el-table>
       <div class="biz-pagination"><el-pagination background layout="total, sizes, prev, pager, next, jumper" :total="total" v-model:current-page="query.page" v-model:page-size="query.size" :page-sizes="[10,20,50]" @change="load" /></div>
     </section>
@@ -39,14 +39,15 @@ import { useAuthStore } from '../../stores/auth'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { InventoryItem, InventoryQuery, InventoryStatus } from '../../types/inventory'
 import { formatDateTime, formatQuantity } from '../../utils/format'
+import { canCreatePurchase } from '../../utils/purchasePermissions'
 import { normalizeRoleName } from '../../utils/roles'
 
 const items = ref<InventoryItem[]>([])
 const router = useRouter()
 const loading = ref(false), total = ref(0)
 const auth=useAuthStore(),canCount=computed(()=>{
-  const roleName=auth.userInfo?.roleName||auth.roleName
-  return roleName==='系统管理员'||roleName==='管理员'
+  const roleName=normalizeRoleName(auth.userInfo?.roleName||auth.roleName)
+  return roleName==='采购员'
 })
 const countVisible=ref(false),counting=ref(false),countTarget=ref<InventoryItem|null>(null),actualStock=ref(0),countRemark=ref('')
 const countChange=computed(()=>actualStock.value-Number(countTarget.value?.currentStock||0))

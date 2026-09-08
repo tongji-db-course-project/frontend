@@ -138,7 +138,10 @@ const router=useRouter(),loading=ref(false),updatedAt=ref(''),errorMessage=ref('
 const authStore=useAuthStore()
 const canAccess=(path:string)=>{
   const roleName=authStore.userInfo?.roleName||authStore.roleName
-  const prefixes:Record<string,string[]>={采购员:['/dashboard','/product','/sales','/members'],收银员:['/dashboard','/product','/purchases','/inventory']}
+  const prefixes:Record<string,string[]>={
+    采购员:['/dashboard','/product','/purchase-suggestions','/purchases','/purchase-returns','/suppliers','/settlements','/inventory'],
+    收银员:['/dashboard','/product','/sales','/returns','/members','/points'],
+  }
   return !prefixes[roleName]||prefixes[roleName].some(prefix=>path===prefix||path.startsWith(`${prefix}/`))
 }
 const daily=ref<DailySalesStatistics[]>([]),rankData=ref<ProductRankItem[]>([]),warningItems=ref<InventoryItem[]>([]),inventoryStats=ref<InventoryStatistics|null>(null)

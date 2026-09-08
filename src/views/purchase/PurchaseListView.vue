@@ -4,6 +4,7 @@
       <div>
         <p>首页 / 采购管理 / 采购单列表</p>
         <h1>采购管理</h1>
+        <small class="workflow-hint">采购员制单 → 系统管理员审批 → 采购员执行入库</small>
       </div>
       <button v-if="canCreatePurchase()" class="primary-btn" @click="$router.push('/purchases/create')">
         <el-icon><Plus /></el-icon>新建采购单
@@ -170,6 +171,7 @@ onMounted(() => Promise.all([getList(), loadSuppliers()]));
 .page-head { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
 .page-head p { font-size: 12px; color: #8c8c8c; margin: 0; }
 .page-head h1 { margin: 4px 0 0; font-size: 22px; }
+.workflow-hint { display: block; margin-top: 7px; color: #65758b; }
 .primary-btn { background: #1890ff; color: #fff; border: 0; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
 
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }

@@ -87,8 +87,9 @@ import { computed, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { purchaseApi } from '../../api/purchase';
+import { inventoryApi } from '../../api/inventory';
 import { useAuthStore } from '../../stores/auth';
-import { canApproveOrStockIn, canCancelPurchaseBeforeApproval, canEditPurchaseBeforeApproval } from '../../utils/purchasePermissions';
+import { canApprovePurchase, canCancelPurchaseBeforeApproval, canEditPurchaseBeforeApproval, canStockInPurchase } from '../../utils/purchasePermissions';
 import type { PurchaseOrder } from '../../types/purchase';
 import type { Warehouse } from '../../types/inventory';
 import type { OrderTimelineItem } from '../../types/common';
@@ -100,8 +101,8 @@ const loading = ref(false);
 const timeline = ref<OrderTimelineItem[]>([]);
 const authStore = useAuthStore();
 const currentUserId = () => Number(authStore.userInfo?.userId || 0);
-const canApproveOrReject = computed(() => canApproveOrStockIn());
-const canStockIn = computed(() => canApproveOrStockIn());
+const canApproveOrReject = computed(() => canApprovePurchase());
+const canStockIn = computed(() => canStockInPurchase());
 const canEditPurchase = (status?: string) => canEditPurchaseBeforeApproval(status);
 const canCancelPurchase = (status?: string) => canCancelPurchaseBeforeApproval(status);
 const stockInVisible = ref(false);
@@ -115,8 +116,8 @@ const hasStockInDifference = computed(() => stockInItems.value.some(item => item
 
 const approveOrder = async () => {
   if (!detail.value) return;
-  if (!canApproveOrStockIn()) {
-    ElMessage.warning('只有管理员、采购员可以审批采购单');
+  if (!canApprovePurchase()) {
+    ElMessage.warning('只有管理员可以审批采购单');
     return;
   }
   try {
@@ -131,8 +132,8 @@ const approveOrder = async () => {
 
 const rejectOrder = async () => {
   if (!detail.value) return;
-  if (!canApproveOrStockIn()) {
-    ElMessage.warning('只有管理员、采购员可以驳回采购单');
+  if (!canApprovePurchase()) {
+    ElMessage.warning('只有管理员可以驳回采购单');
     return;
   }
   try {
@@ -155,14 +156,40 @@ const rejectOrder = async () => {
 const openStockIn = async () => {
   if (!detail.value) return;
   try {
-    if (!canApproveOrStockIn()) {
-      ElMessage.warning('只有管理员、采购员可以进行采购入库');
+    if (!canStockInPurchase()) {
+      ElMessage.warning('只有采购员可以进行采购入库');
       return;
     }
+    warehouses.value = (await inventoryApi.getWarehouses() || []).filter(item => item.status !== '禁用');
+    if (!warehouses.value.length) {
+      ElMessage.warning('没有可用仓库，无法入库');
+      return;
+    }
+    stockInWarehouseId.value = warehouses.value.length === 1 ? warehouses.value[0]?.warehouseId || null : null;
+    stockInDate.value = new Date().toISOString().split('T')[0];
+    stockInRemark.value = '采购入库';
+    stockInItems.value = (detail.value.details || []).map(item => ({
+      productId: item.productId,
+      productName: item.productName,
+      orderedQuantity: item.purchaseQuantity,
+      stockInQuantity: item.purchaseQuantity,
+    }));
+    stockInVisible.value = true;
+  } catch (error) {
+    console.error(error);
+    ElMessage.error('仓库列表加载失败');
+  }
+};
+
+const submitStockIn = async () => {
+  if (!detail.value || !stockInWarehouseId.value || hasStockInDifference.value) return;
+  stockingIn.value = true;
+  try {
     await purchaseApi.stockIn(detail.value.orderId, {
       operatorId: currentUserId(),
-      stockInDate: new Date().toISOString().split('T')[0],
-      details: (detail.value.details || []).map((item) => ({
+      warehouseId: stockInWarehouseId.value,
+      stockInDate: stockInDate.value,
+      details: stockInItems.value.map((item) => ({
         productId: item.productId,
         stockInQuantity: item.stockInQuantity,
       })),
@@ -171,9 +198,9 @@ const openStockIn = async () => {
     detail.value = { ...detail.value, status: '已入库' };
     stockInVisible.value = false;
     ElMessage.success('采购入库成功');
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    ElMessage.error('入库失败');
+    ElMessage.error(error?.response?.data?.message || '入库失败');
   } finally {
     stockingIn.value = false;
   }
@@ -182,7 +209,7 @@ const openStockIn = async () => {
 const cancelOrder = async () => {
   if (!detail.value) return;
   if (!canCancelPurchaseBeforeApproval(detail.value.status)) {
-    ElMessage.warning('只有管理员、采购员可以作废采购单（待审批、已驳回、已审批状态）');
+    ElMessage.warning('只有采购员可以作废采购单（待审批、已驳回、已审批状态）');
     return;
   }
   try {
