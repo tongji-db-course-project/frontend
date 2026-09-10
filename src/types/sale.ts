@@ -47,7 +47,7 @@ export interface SaleCheckoutPayload {
   memberId?: number | null
   /** 已弃用：单仓库模式由后端自动选择唯一启用仓库。 */
   warehouseId?: number
-  payType: '会员卡' | string
+  payType: string
   redeemPoints: number
   couponId?: number | null
   items: SaleCheckoutDetail[]
@@ -70,4 +70,11 @@ export interface SaleQuote {
   payableAmount: number
   redeemPoints: number
   itemPrices?: Array<{ productId: number; unitPrice: number; discountType?: string | null }>
+}
+
+export interface PointConfig {
+  earnRate: number
+  redeemRate: number
+  redeemMin: number
+  redeemMaxRate: number
 }

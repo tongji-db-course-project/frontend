@@ -30,10 +30,10 @@
           <p v-if="member"><el-tag type="success">{{ member.levelName || '普通会员' }}</el-tag><b>{{ member.memberName }}</b><span>{{ member.phone }} · {{ member.points ?? 0 }} 积分</span><el-button link type="danger" @click="removeMember">移除</el-button></p>
         </div>
         <div class="checkout-options">
-          <label>兑换积分</label><el-input-number v-model="redeemPoints" :min="0" :max="member?.points ?? 0" :precision="0" :disabled="!member" />
+          <label>兑换积分</label><el-input-number v-model="redeemPoints" :min="0" :max="maxRedeemPoints" :step="pointConfig?.redeemMin || 1" :precision="0" :disabled="!member || !pointConfig || maxRedeemPoints < (pointConfig.redeemMin || 0)" @change="normalizeRedeemPoints" />
         </div>
-        <el-alert title="支付方式：会员卡扣款。商品价格、优惠、积分和最终实付金额由后端统一结算。" type="info" :closable="false" show-icon />
-        <dl class="checkout-total"><div><dt>商品金额</dt><dd>{{ formatMoney(totalAmount) }}</dd></div><div><dt>会员折扣{{ memberRateLabel }}</dt><dd>- {{ formatMoney(memberDiscount) }}</dd></div><div class="grand"><dt>会员折后金额</dt><dd>{{ formatMoney(estimatedPayable) }}</dd></div></dl>
+        <p class="point-rule">{{ pointRuleText }}</p>
+        <dl class="checkout-total"><div><dt>商品金额</dt><dd>{{ formatMoney(totalAmount) }}</dd></div><div><dt>会员折扣{{ memberRateLabel }}</dt><dd>- {{ formatMoney(memberDiscount) }}</dd></div><div><dt>积分抵扣（{{ redeemPoints }} 积分）</dt><dd>- {{ formatMoney(pointDiscount) }}</dd></div><div class="grand"><dt>预计实付</dt><dd>{{ formatMoney(estimatedPayable) }}</dd></div></dl>
         <el-button size="large" type="primary" :loading="submitting" :disabled="!cart.length" @click="checkout">确认收款</el-button>
       </section>
     </div>
@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Delete, Search, ShoppingCart } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
@@ -52,7 +52,7 @@ import { memberApi } from '../../api/member'
 import { saleApi } from '../../api/sale'
 import type { ProductListItem } from '../../types/product'
 import type { Member } from '../../types/member'
-import type { SaleOrder } from '../../types/sale'
+import type { PointConfig, SaleOrder } from '../../types/sale'
 import { formatMoney } from '../../utils/format'
 
 type CheckoutProduct = ProductListItem
@@ -67,6 +67,7 @@ const memberPhone = ref('')
 const member = ref<Member | null>(null)
 const memberLoading = ref(false)
 const redeemPoints = ref(0)
+const pointConfig = ref<PointConfig | null>(null)
 const submitting = ref(false)
 const lastSale = ref<SaleOrder | null>(null)
 
@@ -80,7 +81,32 @@ const memberRate = computed(() => member.value?.levelName === '钻石会员' || 
   : member.value?.levelName === '黄金会员' || member.value?.levelName === '黄金' ? 0.95 : 1)
 const memberRateLabel = computed(() => memberRate.value === 1 ? '（普通会员无折扣）' : `（${memberRate.value * 10} 折）`)
 const memberDiscount = computed(() => Math.round(totalAmount.value * (1 - memberRate.value) * 100) / 100)
-const estimatedPayable = computed(() => Math.max(0, totalAmount.value - memberDiscount.value))
+const amountAfterMember = computed(() => Math.max(0, totalAmount.value - memberDiscount.value))
+const maxRedeemPoints = computed(() => {
+  if (!member.value || !pointConfig.value || pointConfig.value.redeemRate <= 0) return 0
+  const orderLimit = Math.floor(amountAfterMember.value * pointConfig.value.redeemMaxRate / pointConfig.value.redeemRate)
+  return Math.max(0, Math.min(Number(member.value.points || 0), orderLimit))
+})
+const pointDiscount = computed(() => Math.round(redeemPoints.value * Number(pointConfig.value?.redeemRate || 0) * 100) / 100)
+const estimatedPayable = computed(() => Math.max(0, amountAfterMember.value - pointDiscount.value))
+const pointRuleText = computed(() => pointConfig.value
+  ? `${pointConfig.value.redeemMin} 积分起用，1 积分抵 ${formatMoney(pointConfig.value.redeemRate)}，最多抵扣会员折后金额的 ${pointConfig.value.redeemMaxRate * 100}%；本单最多可用 ${maxRedeemPoints.value} 积分`
+  : '正在读取积分兑换规则…')
+
+function normalizeRedeemPoints(value: number | undefined) {
+  const points = Math.max(0, Math.floor(Number(value || 0)))
+  if (!pointConfig.value || points === 0) { redeemPoints.value = 0; return }
+  if (points < pointConfig.value.redeemMin) {
+    redeemPoints.value = 0
+    ElMessage.warning(`至少使用 ${pointConfig.value.redeemMin} 积分，也可以不使用积分`)
+    return
+  }
+  redeemPoints.value = Math.min(points, maxRedeemPoints.value)
+}
+
+watch(maxRedeemPoints, max => {
+  if (redeemPoints.value > max) redeemPoints.value = max >= (pointConfig.value?.redeemMin || 0) ? max : 0
+})
 
 async function searchProducts() {
   const keyword = productKeyword.value.trim()
@@ -113,13 +139,16 @@ async function findMember() {
 
 async function checkout() {
   if (!cart.value.length) return
-  if (!member.value) { ElMessage.warning('会员卡支付需要先查询并选择会员'); return }
-  await ElMessageBox.confirm(`确认从 ${member.value.memberName} 的会员卡完成本次扣款吗？`, '确认收款', { type: 'warning', confirmButtonText: '确认扣款' })
+  if (!member.value) { ElMessage.warning('请先查询并选择会员'); return }
+  if (redeemPoints.value > 0 && pointConfig.value && redeemPoints.value < pointConfig.value.redeemMin) {
+    ElMessage.warning(`使用积分不能少于 ${pointConfig.value.redeemMin}`); return
+  }
+  await ElMessageBox.confirm(`确认完成会员 ${member.value.memberName} 的本次现金收款吗？`, '确认收款', { type: 'warning', confirmButtonText: '确认收款' })
   submitting.value = true
   try {
     lastSale.value = await saleApi.create({
       memberId: member.value?.memberId,
-      payType: '会员卡',
+      payType: '现金',
       redeemPoints: redeemPoints.value,
       items: cart.value.map(item => ({ productId: item.product.productId, quantity: item.quantity })),
     })
@@ -127,8 +156,13 @@ async function checkout() {
     ElMessage.success('收款成功')
   } finally { submitting.value = false }
 }
+
+onMounted(async () => {
+  try { pointConfig.value = await saleApi.getPointConfig() }
+  catch { ElMessage.warning('积分规则加载失败，暂时不能使用积分') }
+})
 </script>
 
 <style scoped>
-.checkout-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(380px,.65fr);gap:14px}.checkout-search{display:flex;gap:9px;margin-bottom:12px}.original-price{display:block;color:#a0a8b5;text-decoration:line-through}.cart-panel>header{display:flex;justify-content:space-between;align-items:center}.cart-panel h3{margin:0;display:flex;align-items:center;gap:7px}.cart-panel h3 svg{width:17px}.cart-panel header small{color:#98a4b6}.cart-list{min-height:220px;max-height:340px;overflow:auto;margin:12px 0;border-block:1px solid #edf1f5}.cart-list article{padding:11px 0;display:grid;grid-template-columns:minmax(110px,1fr) 105px 90px 32px;align-items:center;gap:8px;border-bottom:1px solid #edf1f5}.cart-list article>div{display:grid}.cart-list small{color:#98a4b6;font-size:10px}.member-box{padding:12px;border-radius:7px;background:#f7f9fc}.member-box p{margin:9px 0 0;display:flex;align-items:center;gap:8px}.member-box p span{color:#7d899a;font-size:11px}.member-box p .el-button{margin-left:auto}.checkout-options{padding:14px 0;display:grid;grid-template-columns:90px 1fr;align-items:center;gap:10px}.checkout-total{margin:14px 0}.checkout-total div{display:flex;justify-content:space-between;padding:6px 0}.checkout-total dt{color:#7d899a}.checkout-total dd{margin:0}.checkout-total .grand{padding-top:11px;border-top:1px dashed #dfe5ed;font-size:18px;font-weight:700}.cart-panel>.el-button{width:100%}@media(max-width:1150px){.checkout-grid{grid-template-columns:1fr}.cart-panel{min-width:0}}@media(max-width:600px){.cart-list article{grid-template-columns:1fr 100px}.cart-list article>strong{grid-column:1}.checkout-options{grid-template-columns:1fr}}
+.checkout-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(380px,.65fr);gap:14px}.checkout-search{display:flex;gap:9px;margin-bottom:12px}.original-price{display:block;color:#a0a8b5;text-decoration:line-through}.cart-panel>header{display:flex;justify-content:space-between;align-items:center}.cart-panel h3{margin:0;display:flex;align-items:center;gap:7px}.cart-panel h3 svg{width:17px}.cart-panel header small{color:#98a4b6}.cart-list{min-height:220px;max-height:340px;overflow:auto;margin:12px 0;border-block:1px solid #edf1f5}.cart-list article{padding:11px 0;display:grid;grid-template-columns:minmax(120px,1fr) 105px 80px 32px;align-items:center;gap:10px;border-bottom:1px solid #edf1f5}.cart-list article>div{min-width:0;display:grid}.cart-list article>strong{text-align:right;white-space:nowrap}.cart-list article>:deep(.el-input-number){width:105px}.cart-list small{color:#98a4b6;font-size:10px}.member-box{padding:12px;border-radius:7px;background:#f7f9fc}.member-box p{margin:9px 0 0;display:flex;align-items:center;gap:8px}.member-box p span{color:#7d899a;font-size:11px}.member-box p .el-button{margin-left:auto}.checkout-options{padding:14px 0 6px;display:grid;grid-template-columns:90px 1fr;align-items:center;gap:10px}.point-rule{margin:0 0 12px;color:#7d899a;font-size:11px;line-height:1.6}.checkout-total{margin:14px 0}.checkout-total div{display:flex;justify-content:space-between;padding:6px 0}.checkout-total dt{color:#7d899a}.checkout-total dd{margin:0}.checkout-total .grand{padding-top:11px;border-top:1px dashed #dfe5ed;font-size:18px;font-weight:700}.cart-panel>.el-button{width:100%}@media(max-width:1150px){.checkout-grid{grid-template-columns:1fr}.cart-panel{min-width:0}}@media(max-width:600px){.cart-list article{grid-template-columns:minmax(0,1fr) 105px}.cart-list article>strong{grid-column:1;text-align:left}.checkout-options{grid-template-columns:1fr}}
 </style>
