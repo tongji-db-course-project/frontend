@@ -49,7 +49,7 @@ const auth=useAuthStore(),canCount=computed(()=>{
   return roleName==='管理员'
 })
 const query = reactive<InventoryQuery>({ page: 1, size: 10, keyword: '', warningOnly: false })
-const statusOf = (item: InventoryItem): InventoryStatus => item.currentStock <= 0 ? '缺货' : item.stockWarning != null && item.currentStock <= item.stockWarning ? '预警' : '正常'
+const statusOf = (item: InventoryItem): InventoryStatus => item.currentStock <= 0 ? '缺货' : item.stockWarning != null && item.currentStock < item.stockWarning ? '预警' : '正常'
 const statusTone = (status: InventoryStatus) => status === '正常' ? 'green' : status === '预警' ? 'orange' : 'red'
 const stockTotal = computed(() => items.value.reduce((sum, item) => sum + item.currentStock, 0))
 const warningCount = computed(() => items.value.filter(item => statusOf(item) === '预警').length)

@@ -3,9 +3,9 @@
     <PageHeader
       eyebrow="采购管理 · 自动预警"
       title="库存采购预警"
-      description="系统每 30 秒扫描一次总仓库存，达到或低于安全库存时自动生成采购建议"
+      description="系统每 30 秒扫描一次总仓库存，低于安全库存时自动生成采购建议"
     >
-      <el-button :icon="Refresh" :loading="loading" @click="load">立即扫描</el-button>
+      <el-button :icon="Refresh" :loading="loading" @click="scanNow">立即扫描</el-button>
     </PageHeader>
 
     <section class="biz-stats">
@@ -82,18 +82,27 @@ const scanText = computed(() => lastScannedAt.value
   ? `最近扫描：${lastScannedAt.value.toLocaleTimeString('zh-CN', { hour12: false })}`
   : '等待首次扫描')
 
-async function load() {
-  if (loading.value) return
+async function load(showResult = false) {
+  if (loading.value) {
+    if (showResult) ElMessage.info('库存预警正在扫描，请稍候')
+    return
+  }
   loading.value = true
   try {
     groups.value = await inventoryApi.getPurchaseSuggestions() ?? []
     lastScannedAt.value = new Date()
+    if (showResult) {
+      ElMessage.success(`扫描完成，发现 ${rows.value.length} 个预警商品`)
+    }
   } catch {
-    groups.value = []
     ElMessage.error('库存预警扫描失败，请检查后端服务')
   } finally {
     loading.value = false
   }
+}
+
+function scanNow() {
+  void load(true)
 }
 
 function createPurchase(row: SuggestionRow) {
@@ -109,8 +118,8 @@ function createPurchase(row: SuggestionRow) {
 }
 
 onMounted(() => {
-  load()
-  timer = window.setInterval(load, 30_000)
+  void load()
+  timer = window.setInterval(() => void load(), 30_000)
 })
 onBeforeUnmount(() => window.clearInterval(timer))
 </script>
