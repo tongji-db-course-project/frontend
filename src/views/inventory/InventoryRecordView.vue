@@ -34,12 +34,12 @@ import { inventoryApi } from '../../api/inventory'
 import type { InventoryRecord, InventoryRecordQuery } from '../../types/inventory'
 import { formatDateTime } from '../../utils/format'
 
-const recordTypes = ['入库', '手动入库', '销售', '销售作废', '退货', '采购退货', '手动出库', '盘点']
+const recordTypes = ['入库', '手动入库', '销售', '销售作废', '退货', '采购退货', '手动出库', '盘点', '盘盈', '盘亏']
 const records = ref<InventoryRecord[]>([]), loading = ref(false), total = ref(0)
 const dateRange = ref<string[]>([])
 const query = reactive<InventoryRecordQuery>({ page: 1, size: 10, keyword: '', recordType: '', sourceNo: '', startDate: '', endDate: '' })
 watch(dateRange, value => { query.startDate = value?.[0] || ''; query.endDate = value?.[1] || '' })
-const typeTone = (type: string) => ['入库','手动入库','退货','销售作废'].includes(type) ? 'green' : ['销售','采购退货','手动出库'].includes(type) ? 'blue' : 'orange'
+const typeTone = (type: string) => ['入库','手动入库','退货','销售作废','盘盈'].includes(type) ? 'green' : ['销售','采购退货','手动出库','盘亏'].includes(type) ? 'blue' : 'orange'
 async function load() { loading.value = true; try { const result = await inventoryApi.getRecords({ ...query, keyword: query.keyword || undefined, recordType: query.recordType || undefined, sourceNo: query.sourceNo || undefined, startDate: query.startDate || undefined, endDate: query.endDate || undefined }); records.value = result?.list ?? []; total.value = result?.total ?? 0 } catch { records.value = []; total.value = 0 } finally { loading.value = false } }
 function search() { query.page = 1; load() }
 function reset() { dateRange.value = []; Object.assign(query, { page: 1, size: 10, keyword: '', recordType: '', sourceNo: '', startDate: '', endDate: '' }); load() }

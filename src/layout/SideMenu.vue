@@ -108,6 +108,7 @@ const menuItems = [
     children: [
       { name: '当前库存', path: '/inventory' },
       { name: '库存流水', path: '/inventory/records' },
+      { name: '库存盘点', path: '/inventory/counts' },
     ],
   },
   {
