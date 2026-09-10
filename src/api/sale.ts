@@ -1,6 +1,6 @@
 import request from '../utils/request'
 import type { PageResult } from '../types/common'
-import type { MemberCoupon, SaleCheckoutPayload, SaleOrder, SaleQuery, SaleQuote } from '../types/sale'
+import type { MemberCoupon, PointConfig, SaleCheckoutPayload, SaleOrder, SaleQuery, SaleQuote } from '../types/sale'
 import type { OrderTimelineItem } from '../types/common'
 
 export const saleApi = {
@@ -12,6 +12,9 @@ export const saleApi = {
   },
   create(data: SaleCheckoutPayload) {
     return request.post<unknown, SaleOrder>('/sales', data)
+  },
+  getPointConfig() {
+    return request.get<unknown, PointConfig>('/sales/point-config')
   },
   checkout(data: SaleCheckoutPayload) {
     return request.post<unknown, SaleOrder>('/sales', data)

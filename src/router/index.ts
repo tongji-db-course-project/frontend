@@ -41,6 +41,7 @@ const router = createRouter({
             //库存与其他
             {path:'inventory',component:()=>import('../views/inventory/InventoryListView.vue')},
             {path:'inventory/records',component:()=>import('../views/inventory/InventoryRecordView.vue')},
+            {path:'inventory/counts',component:()=>import('../views/inventory/StockCheckView.vue')},
             {path:'points/records',component:()=>import('../views/point/PointRecordView.vue')},
             {path:'settlements',component:()=>import('../views/settlement/SettlementListView.vue')},
 

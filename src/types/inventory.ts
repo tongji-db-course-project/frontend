@@ -19,6 +19,8 @@ export interface InventoryItem {
   warehouseId: number
   warehouseName?: string
   currentStock: number
+  isLocked: boolean
+  lockNo?: string | null
   lastUpdateTime: string | null
 }
 

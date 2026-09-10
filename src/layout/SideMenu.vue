@@ -108,6 +108,7 @@ const menuItems = [
     children: [
       { name: '当前库存', path: '/inventory' },
       { name: '库存流水', path: '/inventory/records' },
+      { name: '库存盘点', path: '/inventory/counts' },
     ],
   },
   {
@@ -140,7 +141,7 @@ const menuItems = [
 ]
 
 const rolePaths = {
-  采购员: ['/dashboard', '/product', '/purchase-suggestions', '/suppliers', '/settlements', '/purchases', '/purchases/create', '/purchase-returns', '/inventory', '/inventory/records'],
+  采购员: ['/dashboard', '/product', '/purchase-suggestions', '/suppliers', '/settlements', '/purchases', '/purchases/create', '/purchase-returns', '/inventory', '/inventory/records', '/inventory/counts'],
   收银员: ['/dashboard', '/product', '/sales/checkout', '/sales', '/returns', '/members', '/points/records'],
 }
 
