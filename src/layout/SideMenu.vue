@@ -141,7 +141,7 @@ const menuItems = [
 ]
 
 const rolePaths = {
-  采购员: ['/dashboard', '/product', '/purchase-suggestions', '/suppliers', '/settlements', '/purchases', '/purchases/create', '/purchase-returns', '/inventory', '/inventory/records'],
+  采购员: ['/dashboard', '/product', '/purchase-suggestions', '/suppliers', '/settlements', '/purchases', '/purchases/create', '/purchase-returns', '/inventory', '/inventory/records', '/inventory/counts'],
   收银员: ['/dashboard', '/product', '/sales/checkout', '/sales', '/returns', '/members', '/points/records'],
 }
 

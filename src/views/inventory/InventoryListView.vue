@@ -46,7 +46,7 @@ const router = useRouter()
 const loading = ref(false), total = ref(0)
 const auth=useAuthStore(),canCount=computed(()=>{
   const roleName=normalizeRoleName(auth.userInfo?.roleName||auth.roleName)
-  return roleName==='管理员'
+  return roleName==='管理员'||roleName==='采购员'
 })
 const query = reactive<InventoryQuery>({ page: 1, size: 10, keyword: '', warningOnly: false })
 const statusOf = (item: InventoryItem): InventoryStatus => item.currentStock <= 0 ? '缺货' : item.stockWarning != null && item.currentStock < item.stockWarning ? '预警' : '正常'
