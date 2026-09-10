@@ -45,7 +45,8 @@ export interface SaleQuery extends PageQuery {
 
 export interface SaleCheckoutPayload {
   memberId?: number | null
-  warehouseId: number
+  /** 已弃用：单仓库模式由后端自动选择唯一启用仓库。 */
+  warehouseId?: number
   payType: '会员卡' | string
   redeemPoints: number
   couponId?: number | null

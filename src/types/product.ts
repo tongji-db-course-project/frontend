@@ -7,6 +7,8 @@ export interface ProductListItem {
   specification?: string | null
   purchasePrice?: number | null
   salePrice?: number | null
+  isPromotion?: string | null
+  promotionPrice?: number | null
   stockWarning?: number | null
   unit?: string | null
   status?: string | null
